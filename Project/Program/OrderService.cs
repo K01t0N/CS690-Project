@@ -3,20 +3,40 @@ namespace Program;
 class OrderService
 {
 
-    DataManager dataManager;
     OrderData orderData;
     Random rand;
 
-    public OrderService(DataManager datamanager, OrderData orderData, Random rand) {
-        this.dataManager = dataManager;
+    public OrderService(OrderData orderData, Random rand) {
         this.orderData = orderData;
         this.rand = rand;
     }
 
-    public List<Order> GetOrders() {
+    public List<Order> GetAll() {
         return this.orderData.GetOrders();
     }
 
+    public List<Order> GetOrders() {
+        List<Order> orders = this.orderData.GetOrders();
+        List<Order> filtered = new List<Order>();
+        for (int i = 0; i < orders.Count; i++) {
+            if (orders[i].GetStatus() != "order") {
+                filtered.Add(orders[i]);
+            }
+        }
+        return filtered;
+    }
+
+    public List<Order> GetRequests() {
+        List<Order> orders = this.orderData.GetOrders();
+        List<Order> requests = new List<Order>();
+        for (int i = 0; i < orders.Count; i++) {
+            if (orders[i].GetStatus() == "request") {
+                requests.Add(orders[i]);
+            }
+        }
+        return requests;
+    }
+    
     public Order? GetOneOrder(int id) {
         return orderData.GetOne(id);
     }
@@ -26,7 +46,22 @@ class OrderService
         List<string> orderStrings = [];
         for (int i=0; i<this.orderData.GetOrders().Count; i++) {
             Order order = this.orderData.GetOrders()[i];
-            orderStrings.Add(order.id + "\t\t" + order.type + "\t\t" + order.device + "\t\t" + order.name);
+            if (order.GetStatus() != "request") {
+                orderStrings.Add(order.GetID() + "\t\t" + order.GetTypeString() + "\t\t" + order.GetDevice() + "\t\t" + order.GetName());
+            }
+            
+        }
+        return orderStrings;
+    }
+
+    public List<string> GetRequestStrings() {
+        List<string> orderStrings = [];
+        for (int i=0; i<this.orderData.GetOrders().Count; i++) {
+            Order order = this.orderData.GetOrders()[i];
+            if (order.GetStatus() == "request") {
+                orderStrings.Add(order.GetID() + "\t\t" + order.GetTypeString() + "\t\t" + order.GetDevice() + "\t\t" + order.GetName());
+            }
+            
         }
         return orderStrings;
     }
@@ -37,7 +72,7 @@ class OrderService
         Order order = new Order(id, type, device, name, status);
         this.orderData.Add(order); // fix
         this.orderData.SaveOrders();
-        return order.id;
+        return order.GetID();
     }
 
     int NewId() { // generates a random id that is unique from other ids in the orders list
@@ -55,17 +90,43 @@ class OrderService
         return number;
     }
 
-    public void StartOrder() {
-        Console.WriteLine("StartOrder works!");
+    public void StartOrder(Order order, Employee employee) {
+        this.orderData.GetOne(order.GetID()).SetStatus("started");
     }
-    public void FinishOrder() {
-        Console.WriteLine("FinishOrder works!");
+    public void FinishOrder(Order order, Employee employee) {
+        if (this.HasEmployee(order, employee)) {
+           this.GetOrder(order).SetStatus("finished"); 
+        }
     }
-    public void JoinOrder() {
-        Console.WriteLine("JoinOrder works!");
+    public void JoinOrder(Order order, Employee employee) {
+        if (!this.HasEmployee(order, employee)) {
+            this.GetOrder(order).GetEmployees().Add(employee);
+        }
     }
-    public void LeaveOrder() {
-        Console.WriteLine("LeaveOrder works!");
+    public void LeaveOrder(Order order, Employee employee) {
+        if (this.HasEmployee(order, employee)) {
+            this.GetOrder(order).GetEmployees().Remove(employee);
+        }
     }
+    public void ApproveRequest(Order order) {
+        this.GetOrder(order).SetStatus("not started");
+    }
+    public void RejectRequest(Order order) {
+        this.orderData.GetOrders().Remove(order);
+    }
+    public void FinishOrderManager(Order order) {
+        return;
+    }
+    public void DeliverOrderManager(Order order) {
+        return;
+    }
+
+    bool HasEmployee(Order order, Employee employee) {
+        return order.GetEmployees().Find(x => x.GetName() == employee.GetName()) != null;
+    }
+    Order GetOrder(Order order) {
+        return this.orderData.GetOne(order.GetID());
+    }
+
 
 }

@@ -27,7 +27,7 @@ class OrderData
             return JsonSerializer.Deserialize<List<Order>>("[]")!;
         }
     }
-    public void SaveOrders() { // fix th◙5s
+    public void SaveOrders() { // fix this
         string jsonString = JsonSerializer.Serialize(this.orders);
         File.WriteAllText("orders.json", "{\"orders\":" + jsonString + "}");
     }
@@ -35,7 +35,7 @@ class OrderData
         this.orders.Add(order);
     }
     public Order GetOne(int id) {
-        return this.orders.Find(x => x.id == id);
+        return this.orders.Find(x => x.GetID() == id);
     }
     public void Remove(int id) {
         this.orders.Remove(this.GetOne(id));

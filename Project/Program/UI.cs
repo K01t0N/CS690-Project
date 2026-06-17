@@ -34,7 +34,7 @@ class UI
             "Other Damage", "Lost Data", "Slower than Usual"
             });
 
-        type = type.Replace("Won't Turn On", "Performace")
+        type = type.Replace("Won't Turn On", "Performance")
             .Replace("Frequent Crashes", "Stability")
             .Replace("Broken Screen", "Screen")
             .Replace("Other Damage", "Hardware Other")
@@ -48,7 +48,7 @@ class UI
 
     void ViewOrder() {
         string orderNumber = AnsiConsole.Ask<string>("Enter your Order Number.");
-        Order? order = orderService.GetOneOrder(Int32.Parse(orderNumber));
+        Order order = orderService.GetOneOrder(Int32.Parse(orderNumber));
 
         Console.WriteLine("Here is your Order:");
         Console.WriteLine("order type: " + order.GetTypeString());
@@ -65,6 +65,7 @@ class UI
             string name = this.Select("Select an employee", names);
             this.employee = this.employeeService.GetOne(name);
             List<string> orders = this.orderService.GetOrderStrings();
+            // 0
             if (orders.Count == 0) {
                 Console.WriteLine("No orders found. Have a customer place an order to start working on it.");
             } else {
@@ -84,45 +85,40 @@ class UI
             Order order = orderService.GetOneOrder(Int32.Parse(id));
             this.DisplayOrder(order); // display order information
             while (true) { // internal loop for actions
-                this.EditOrder(order);
+                // this.EditOrder(order);
+                List<string> options = ["back"];
+                string status = order.GetStatus();
+                bool hasEmployee = order.GetEmployees().Find(x => x.GetName() == employee.GetName()) == null;
+
+                if (status == "not started") {
+                    options.Insert(0, "start order");
+                    }
+                else if (status == "started" && hasEmployee) {
+                    options.Insert(0, "join order");
+                    }
+                else if (status == "started" && hasEmployee) {
+                    options.Insert(0, "leave order");
+                    options.Insert(0, "finish order");
+                    
+                    }
+                string input = Select("Select a task.", options);
+
+                if (input == "back") {
+                    break; // was break
+                    } else {
+                        string actionWord = input.Split(" ")[0];
+                        string choiceText = "Are you sure you want to " + actionWord + " this order?";
+                        string choice = Select(choiceText, new List<string> {"Yes", "No"});
+
+                        if (choice == "Yes") {
+                            if      (input == "start order")     {orderService.StartOrder(Int32.Parse(id), this.employee);}
+                            else if (input == "finish order")    {orderService.FinishOrder(Int32.Parse(id), this.employee);}
+                            else if (input == "join order")      {orderService.JoinOrder(Int32.Parse(id), this.employee);}
+                            else if (input == "leave order")     {orderService.LeaveOrder(Int32.Parse(id), this.employee);}
+                        }
+                    }
             }
         }
-    }
-
-    void EditOrder(Order order) {
-
-        List<string> options = ["back"];
-        string status = order.GetStatus();
-        bool hasEmployee = order.GetEmployees().Find(x => x.GetName() == employee.GetName()) != null;
-
-        if (status == "not started") {
-            options.Add("start order");
-            }
-        else if (status == "started" && hasEmployee) {
-            options.Add("join order");
-            }
-        else if (status == "started" && !hasEmployee) {
-            options.Add("finish order");
-            options.Add("leave order");
-            }
-        string input = Select("Select a task.", options);
-
-        if (input == "back") {
-            return; // was break
-            } else {
-                string actionWord = input.Split(" ")[0];
-
-                string choiceText = "Are you sure you want to " + actionWord + " this order?";
-
-                string choice = Select(choiceText, new List<string> {"Yes", "No"});
-                if (choice == "Yes") {
-                    if      (input == "start order")     {orderService.StartOrder(order, this.employee);}
-                    else if (input == "finish order")    {orderService.FinishOrder(order, this.employee);}
-                    else if (input == "join order")      {orderService.JoinOrder(order, this.employee);}
-                    else if (input == "leave order")     {orderService.LeaveOrder(order, this.employee);}
-                }
-            }
-        
     }
 
     void SelectManager() {
@@ -131,7 +127,7 @@ class UI
         string choice = Select(prompt, choices);
         if      (choice == "manage requests")   {this.ManageRequests();}
         else if (choice == "manage orders")     {this.ManageOrders();}
-        // manage employeess
+        // manage employees
     }
 
     void ManageRequests() {
@@ -146,18 +142,20 @@ class UI
             Order order = this.orderService.GetOneOrder(Int32.Parse(id));
             this.DisplayOrder(order); // display request information
             while (true) { // internal loop for actions
-                List<string> options = ["approve", "reject", "block"];
+                List<string> options = ["approve", "reject", "back"];
                 string action = Select("Select a task.", options);
                 if (action == "back") {break;}
                 string confirmPrompt = "Are you sure you want to " + action + " this request?";
                 string confirm = Select(confirmPrompt, new List<string> {"Yes", "No"});
                 if (action == "approve" && confirm == "Yes") {
-                    this.orderService.ApproveRequest(order);
+                    this.orderService.ApproveRequest(Int32.Parse(id));
                     Console.WriteLine("Request approved.");
+                    break;
                     }
                 else if (action == "reject" && confirm == "Yes") {
                     this.orderService.RejectRequest(order);
                     Console.WriteLine("Request rejected.");
+                    break;
                 }
             }
         }
@@ -177,18 +175,33 @@ class UI
             Order order = orderService.GetOneOrder(Int32.Parse(id));
             this.DisplayOrder(order); // display order information
             while (true) { // internal loop for actions
-                List<string> options = ["finish", "deliver", "back"];
+                List<string> options = ["remove order", "back"];
+                // finish, deliver, remove
+                if (order.GetStatus() == "waiting approval") {
+                    options.Insert(0, "finish order");
+                } else if (order.GetStatus() == "finished") {
+                    options.Insert(0, "deliver order");
+                }
                 string action = Select("Select a task.", options);
-                if (action != "back") {
-                    string confirmText = "Are you sure you want to " + action + " this order?";
+                if (action == "back") {
+                    break;
+                } else {
+                    string actionWord = action.Split(" ")[0];
+                    string confirmText = "Are you sure you want to " + actionWord + " this order?";
                     string confirmChoice = Select(confirmText, new List<string> {"Yes", "No"});
-                    if (action == "finish" && confirmChoice == "Yes") {
-                        this.orderService.FinishOrderManager(order);
+                    if (actionWord == "finish" && confirmChoice == "Yes") {
+                        this.orderService.FinishOrderManager(order.GetID());
                         Console.WriteLine("Order Finished.");
                         }
-                    else if (action == "deliver" && confirmChoice == "Yes") {
+                    else if (actionWord == "deliver" && confirmChoice == "Yes") {
                         this.orderService.DeliverOrderManager(order);
                         Console.WriteLine("Order Delivered.");
+                        break;
+                    }
+                    else if (actionWord == "remove" && confirmChoice == "Yes") {
+                        this.orderService.RemoveOrderManager(order);
+                        Console.WriteLine("Order Removed.");
+                        break;
                     }
                 }
             }
@@ -196,12 +209,6 @@ class UI
     }
 
     void DisplayOrder(Order order) {
-        string keyword;
-        if (order.GetStatus() == "request") {
-            keyword = "request";
-        } else {
-            keyword = "order";
-        }
         Console.WriteLine("order id: " + order.GetID());
         Console.WriteLine("order type: " + order.GetTypeString());
         Console.WriteLine("order device: " + order.GetDevice());
@@ -219,6 +226,7 @@ class UI
                 Console.WriteLine("Employees: " + employeeString);
             }
             Console.WriteLine("ORDER STATUS: " + order.GetStatus());
+            Console.WriteLine("-----------------------");
         }
     }
 

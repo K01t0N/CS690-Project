@@ -2,7 +2,7 @@ namespace Program;
 
 class EmployeeService
 {
-    EmployeeData employeeData;
+    private EmployeeData employeeData;
 
     /*
     methods:

@@ -34,12 +34,12 @@ class EmployeeData
             JsonNode dom = JsonNode.Parse(orderImport)!;
             JsonArray arr = dom!["employees"]!.AsArray()!;
             return JsonSerializer.Deserialize<List<Employee>>(arr)!;
-        } catch (JsonException e) {
+        } catch (JsonException) {
             return JsonSerializer.Deserialize<List<Employee>>("[]")!;
         }
     }
 
-    public void SaveOrders() { // fix this
+    public void SaveOrders() {
         string jsonString = JsonSerializer.Serialize(this.employees);
         File.WriteAllText("employees.json", "{\"employees\":" + jsonString + "}");
     }

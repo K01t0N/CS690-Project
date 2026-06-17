@@ -5,12 +5,13 @@ using System.Text.Json.Serialization;
 
 public class Order
 {
-    [JsonInclude] private int id;
-    [JsonInclude] private string type;
-    [JsonInclude] private string device;
-    [JsonInclude] private string name;
-    [JsonInclude] private List<Employee> employees;
-    [JsonInclude] private string status;
+    
+    [JsonInclude] int id;
+    [JsonInclude] string type;
+    [JsonInclude] string device;
+    [JsonInclude] string name;
+    [JsonInclude] List<Employee> employees;
+    [JsonInclude] public string status;
 
     public Order(int id, string type, string device, string name, string status) {
         this.id = id;
@@ -35,7 +36,7 @@ public class Order
     public string GetName() {
         return this.name;
     }
-    public List<Employee> GetEmployees() {
+    public List<Employee> GetEmployees() { // deference of a possibly null reference
         return this.employees;
     }
     public string GetStatus() {
@@ -53,6 +54,12 @@ public class Order
     }
     public void SetStatus(string status) {
         this.status = status;
+    }
+    public void AddEmployee(Employee employee) {
+        this.employees.Add(employee);
+    }
+    public void RemoveEmployee(Employee employee) {
+        this.employees.Remove(employee);
     }
 
 }

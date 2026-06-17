@@ -19,7 +19,7 @@ class OrderService
         List<Order> orders = this.orderData.GetOrders();
         List<Order> filtered = new List<Order>();
         for (int i = 0; i < orders.Count; i++) {
-            if (orders[i].GetStatus() != "order") {
+            if (orders[i].GetStatus() == "order") {
                 filtered.Add(orders[i]);
             }
         }
@@ -37,19 +37,20 @@ class OrderService
         return requests;
     }
     
-    public Order? GetOneOrder(int id) {
+    public Order GetOneOrder(int id) {
         return orderData.GetOne(id);
     }
 
     public List<string> GetOrderStrings() {
         // returns order fields separated by tabs
         List<string> orderStrings = [];
+        // 1
         for (int i=0; i<this.orderData.GetOrders().Count; i++) {
             Order order = this.orderData.GetOrders()[i];
             if (order.GetStatus() != "request") {
                 orderStrings.Add(order.GetID() + "\t\t" + order.GetTypeString() + "\t\t" + order.GetDevice() + "\t\t" + order.GetName());
             }
-            
+            // 0
         }
         return orderStrings;
     }
@@ -76,9 +77,8 @@ class OrderService
     }
 
     int NewId() { // generates a random id that is unique from other ids in the orders list
-        // https://learn.microsoft.com/en-us/dotnet/api/system.random?view=net-10.0
+        // https://learn.microsoft.com/en-us/dotnet/api/system.randomview=net-10.0
         int number = new int();
-        // List<Order> orders = this.orders; // what is this for?
         bool match = true;
         while(match == true) {
             match = false;
@@ -90,42 +90,49 @@ class OrderService
         return number;
     }
 
-    public void StartOrder(Order order, Employee employee) {
-        this.orderData.GetOne(order.GetID()).SetStatus("started");
+    public void StartOrder(int id, Employee employee) {
+        this.orderData.UpdateOrderStatus(id, "waiting approval");
+        this.orderData.AddEmployee(id, employee);
     }
-    public void FinishOrder(Order order, Employee employee) {
-        if (this.HasEmployee(order, employee)) {
-           this.GetOrder(order).SetStatus("finished"); 
+    public void FinishOrder(int id, Employee employee) {
+        if (this.HasEmployee(id, employee)) {
+           this.orderData.UpdateOrderStatus(id, "waiting approval");
         }
     }
-    public void JoinOrder(Order order, Employee employee) {
-        if (!this.HasEmployee(order, employee)) {
-            this.GetOrder(order).GetEmployees().Add(employee);
+    public void JoinOrder(int id, Employee employee) {
+        if (this.HasEmployee(id, employee)) {
+            this.orderData.AddEmployee(id, employee);
         }
     }
-    public void LeaveOrder(Order order, Employee employee) {
-        if (this.HasEmployee(order, employee)) {
-            this.GetOrder(order).GetEmployees().Remove(employee);
+    public void LeaveOrder(int id, Employee employee) {
+        if (this.HasEmployee(id, employee)) {
+            this.orderData.RemoveEmployee(id, employee);
         }
     }
-    public void ApproveRequest(Order order) {
-        this.GetOrder(order).SetStatus("not started");
+    public void ApproveRequest(int id) {
+        this.orderData.UpdateOrderStatus(id, "not started");
     }
     public void RejectRequest(Order order) {
-        this.orderData.GetOrders().Remove(order);
+        this.orderData.Remove(order);
     }
-    public void FinishOrderManager(Order order) {
-        return;
+    public void FinishOrderManager(int id) {
+        this.orderData.UpdateOrderStatus(id, "finished");
     }
     public void DeliverOrderManager(Order order) {
-        return;
+        this.orderData.Remove(order);
     }
 
-    bool HasEmployee(Order order, Employee employee) {
-        return order.GetEmployees().Find(x => x.GetName() == employee.GetName()) != null;
+    bool HasEmployee(int id, Employee employee) {
+        return this.orderData.GetOne(id)
+        .GetEmployees()
+        .Find(x => x.GetName() == employee.GetName()) == null;
     }
     Order GetOrder(Order order) {
         return this.orderData.GetOne(order.GetID());
+    }
+
+    public void RemoveOrderManager(Order order) {
+        this.orderData.Remove(order);
     }
 
 

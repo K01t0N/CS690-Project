@@ -4,17 +4,6 @@ class EmployeeService
 {
     private EmployeeData employeeData;
 
-    /*
-    methods:
-    Get All
-    Get Names (service layer only)
-    Get One
-    Add
-    Remove
-    Load (data layer only)
-    Save (data layer only)
-    */
-
     public EmployeeService(EmployeeData employeeData) {
         this.employeeData = employeeData;
     }

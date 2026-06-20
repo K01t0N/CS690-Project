@@ -4,8 +4,6 @@ class Program
 {
     static void Main(string[] args)
     {
-        #nullable enable
-
         OrderData orderData = new OrderData();
         EmployeeData employeeData = new EmployeeData();
 

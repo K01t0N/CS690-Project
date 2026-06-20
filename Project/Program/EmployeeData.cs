@@ -9,26 +9,26 @@ class EmployeeData
     [JsonInclude] private List<Employee> employees;
 
     public EmployeeData() {
-        this.employees = this.Load();
+        this.employees = this.LoadEmployees();
     }
-
     public List<Employee> GetAll() {
         return this.employees;
     }
-
     public Employee GetOne(string name) {
         return this.employees.Find(x => x.GetName() == name);
     }
-
     public void Add(Employee e) {
         this.employees.Add(e);
+        this.employees.SaveEmployees();
     }
-
     public void Remove(string name) {
         this.employees.Remove(this.GetOne(name));
+        this.employees.SaveEmployees();
     }
-    
-    List<Employee> Load() {
+    List<Employee> LoadEmployees() {
+        if (!File.Exists("employees.json")) {
+            File.WriteAllText("employees.json", "{\"employees\":[]}");
+        }
         string orderImport = File.ReadAllText("employees.json");
         try {
             JsonNode dom = JsonNode.Parse(orderImport)!;
@@ -38,10 +38,8 @@ class EmployeeData
             return JsonSerializer.Deserialize<List<Employee>>("[]")!;
         }
     }
-
-    public void SaveOrders() {
+    void SaveEmployees() {
         string jsonString = JsonSerializer.Serialize(this.employees);
         File.WriteAllText("employees.json", "{\"employees\":" + jsonString + "}");
     }
-
 }

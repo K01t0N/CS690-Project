@@ -6,12 +6,12 @@ using System.Text.Json.Serialization;
 public class Order
 {
     
-    [JsonInclude] int id;
-    [JsonInclude] string type;
-    [JsonInclude] string device;
-    [JsonInclude] string name;
-    [JsonInclude] List<Employee> employees;
-    [JsonInclude] public string status;
+    [JsonInclude] private int id;
+    [JsonInclude] private string type;
+    [JsonInclude] private string device;
+    [JsonInclude] private string name;
+    [JsonInclude] private List<Employee> employees;
+    [JsonInclude] private string status;
 
     public Order(int id, string type, string device, string name, string status) {
         this.id = id;

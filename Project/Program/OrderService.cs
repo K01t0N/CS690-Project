@@ -3,8 +3,8 @@ namespace Program;
 class OrderService
 {
 
-    OrderData orderData;
-    Random rand;
+    private OrderData orderData;
+    private Random rand;
 
     public OrderService(OrderData orderData, Random rand) {
         this.orderData = orderData;
@@ -71,8 +71,7 @@ class OrderService
         int id = this.NewId();
         string status = "request";
         Order order = new Order(id, type, device, name, status);
-        this.orderData.Add(order); // fix
-        this.orderData.SaveOrders();
+        this.orderData.Add(order);
         return order.GetID();
     }
 
@@ -91,12 +90,12 @@ class OrderService
     }
 
     public void StartOrder(int id, Employee employee) {
-        this.orderData.UpdateOrderStatus(id, "waiting approval");
+        this.orderData.UpdateOrderStatus(id, "started");
         this.orderData.AddEmployee(id, employee);
     }
     public void FinishOrder(int id, Employee employee) {
         if (this.HasEmployee(id, employee)) {
-           this.orderData.UpdateOrderStatus(id, "waiting approval");
+           this.orderData.UpdateOrderStatus(id, "waiting for approval");
         }
     }
     public void JoinOrder(int id, Employee employee) {

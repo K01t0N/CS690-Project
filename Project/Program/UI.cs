@@ -4,9 +4,9 @@ using Spectre.Console;
 
 class UI
 {
-    OrderService orderService;
-    EmployeeService employeeService;
-    Employee employee;
+    private OrderService orderService;
+    private EmployeeService employeeService;
+    private Employee employee;
 
     public UI(OrderService orderService, EmployeeService employeeService) {
         this.orderService = orderService;
@@ -173,11 +173,10 @@ class UI
             if (selectedOrder == "end") {break;}
             string id = selectedOrder.Split("\t")[0];
             Order order = orderService.GetOneOrder(Int32.Parse(id));
-            this.DisplayOrder(order); // display order information
+            this.DisplayOrder(order);
             while (true) { // internal loop for actions
                 List<string> options = ["remove order", "back"];
-                // finish, deliver, remove
-                if (order.GetStatus() == "waiting approval") {
+                if (order.GetStatus() == "waiting for approval") {
                     options.Insert(0, "finish order");
                 } else if (order.GetStatus() == "finished") {
                     options.Insert(0, "deliver order");

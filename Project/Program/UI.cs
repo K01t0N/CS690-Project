@@ -15,7 +15,7 @@ class UI
     
     public void Start() {
         List<string> tempOptions = ["customer", "employee", "manager"];
-        string mode = this.Select("You are a...", tempOptions);
+        string mode = this.Select("Select Mode.", tempOptions);
         if      (mode == "customer")    {this.SelectCustomer();}
         else if (mode == "employee")    {this.SelectEmployee();}
         else if (mode == "manager")     {this.SelectManager();}
@@ -50,12 +50,23 @@ class UI
         string orderNumber = AnsiConsole.Ask<string>("Enter your Order Number.");
         Order order = orderService.GetOneOrder(Int32.Parse(orderNumber));
 
-        Console.WriteLine("Here is your Order:");
-        Console.WriteLine("order type: " + order.GetTypeString());
-        Console.WriteLine("order device: " + order.GetDevice());
-        Console.WriteLine("order name: " + order.GetName());
-        Console.WriteLine("order status: " + order.GetStatus());
+        if (order == null) {
+            Console.WriteLine("No order matches this number." + 
+            "Either the number is incorrect, the order was rejected, or it was already picked up.");
+        } else {
+            Console.WriteLine("Here is your Order:");
+            Console.WriteLine("order type: " + order.GetTypeString());
+            Console.WriteLine("order device: " + order.GetDevice());
+            Console.WriteLine("order name: " + order.GetName());
+            Console.WriteLine("order status: " + order.GetStatus());
+
+            if (order.GetStatus() == "finished") {
+                Console.WriteLine("Your order is ready to be picked up.");
+            }
+        }
     }
+
+        
 
     void SelectEmployee() {
         List<string> names = employeeService.GetNames();
@@ -65,7 +76,7 @@ class UI
             string name = this.Select("Select an employee", names);
             this.employee = this.employeeService.GetOne(name);
             List<string> orders = this.orderService.GetOrderStrings();
-            // 0
+
             if (orders.Count == 0) {
                 Console.WriteLine("No orders found. Have a customer place an order to start working on it.");
             } else {
@@ -85,26 +96,24 @@ class UI
             Order order = orderService.GetOneOrder(Int32.Parse(id));
             this.DisplayOrder(order); // display order information
             while (true) { // internal loop for actions
-                // this.EditOrder(order);
                 List<string> options = ["back"];
                 string status = order.GetStatus();
-                bool hasEmployee = order.GetEmployees().Find(x => x.GetName() == employee.GetName()) == null;
+                bool hasEmployee = orderService.HasEmployee(Int32.Parse(id), this.employee);
 
                 if (status == "not started") {
                     options.Insert(0, "start order");
                     }
-                else if (status == "started" && hasEmployee) {
+                else if (status == "started" && !hasEmployee) {
                     options.Insert(0, "join order");
                     }
                 else if (status == "started" && hasEmployee) {
                     options.Insert(0, "leave order");
                     options.Insert(0, "finish order");
-                    
                     }
                 string input = Select("Select a task.", options);
 
                 if (input == "back") {
-                    break; // was break
+                    break;
                     } else {
                         string actionWord = input.Split(" ")[0];
                         string choiceText = "Are you sure you want to " + actionWord + " this order?";

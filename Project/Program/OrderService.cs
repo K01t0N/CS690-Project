@@ -75,7 +75,8 @@ class OrderService
         return order.GetID();
     }
 
-    int NewId() { // generates a random id that is unique from other ids in the orders list
+    int NewId() {
+        // generates a random id that is unique from other ids in the orders list
         // https://learn.microsoft.com/en-us/dotnet/api/system.randomview=net-10.0
         int number = new int();
         bool match = true;
@@ -99,7 +100,7 @@ class OrderService
         }
     }
     public void JoinOrder(int id, Employee employee) {
-        if (this.HasEmployee(id, employee)) {
+        if (!this.HasEmployee(id, employee)) {
             this.orderData.AddEmployee(id, employee);
         }
     }
@@ -121,10 +122,10 @@ class OrderService
         this.orderData.Remove(order);
     }
 
-    bool HasEmployee(int id, Employee employee) {
+    public bool HasEmployee(int id, Employee employee) {
         return this.orderData.GetOne(id)
         .GetEmployees()
-        .Find(x => x.GetName() == employee.GetName()) == null;
+        .Find(x => x.GetName() == employee.GetName()) != null;
     }
     Order GetOrder(Order order) {
         return this.orderData.GetOne(order.GetID());

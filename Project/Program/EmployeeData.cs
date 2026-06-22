@@ -19,11 +19,11 @@ class EmployeeData
     }
     public void Add(Employee e) {
         this.employees.Add(e);
-        this.employees.SaveEmployees();
+        this.SaveEmployees();
     }
     public void Remove(string name) {
         this.employees.Remove(this.GetOne(name));
-        this.employees.SaveEmployees();
+        this.SaveEmployees();
     }
     List<Employee> LoadEmployees() {
         if (!File.Exists("employees.json")) {

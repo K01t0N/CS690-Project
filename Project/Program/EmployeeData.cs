@@ -28,7 +28,7 @@ class EmployeeData
     List<Employee> LoadEmployees() {
         if (!File.Exists("employees.json")) {
             File.WriteAllText("employees.json",
-            "{\"employees\":[{\"name\":\"Employee 1\"},{\"name\":\"Employee 2\"},{\"name\":\"Employee 3\"}]}");
+            "{\"employees\":[]}");
         }
         string orderImport = File.ReadAllText("employees.json");
         try {

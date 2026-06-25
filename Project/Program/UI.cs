@@ -1,6 +1,7 @@
 namespace Program;
 
 using Spectre.Console;
+using System.Globalization;
 
 class UI
 {
@@ -14,22 +15,21 @@ class UI
     }
     
     public void Start() {
-        List<string> tempOptions = ["customer", "employee", "manager"];
-        string mode = this.Select("Select Mode.", tempOptions);
+        string mode = this.SelectArr("Select Mode.", new string[] {"customer", "employee", "manager"});
         if      (mode == "customer")    {this.SelectCustomer();}
         else if (mode == "employee")    {this.SelectEmployee();}
         else if (mode == "manager")     {this.SelectManager();}
     }
 
     void SelectCustomer() {
-        string task = this.Select("What would you like to do?", new List<string> {"New Order", "View Order"});
+        string task = this.SelectArr("What would you like to do?", new string[] {"New Order", "View Order"});
         if      (task == "New Order")   {this.NewOrder();}
         else if (task == "View Order")  {this.ViewOrder();}
     }
 
     void NewOrder() {
-        string type = this.Select("Select your Repair Type.",
-        new List<string> {
+        string type = this.SelectArr("Select your Repair Type.",
+        new string[] {
             "Won't Turn On", "Frequent Crashes", "Broken Screen",
             "Other Damage", "Lost Data", "Slower than Usual"
             });
@@ -42,7 +42,8 @@ class UI
             .Replace("Slower than Usual", "Performance");
         string device = AnsiConsole.Ask<string>("Enter your Device.");
         string name = AnsiConsole.Ask<string>("Enter your Name.");
-        int orderNumber = orderService.NewOrder(type, device, name);
+        DateTime suggestedDate = this.orderService.SuggestOrderDate();
+        int orderNumber = orderService.NewOrder(type, device, name, suggestedDate);
         Console.WriteLine("Your order number is " + orderNumber);
     }
 
@@ -66,17 +67,14 @@ class UI
         }
     }
 
-        
-
     void SelectEmployee() {
         List<string> names = employeeService.GetNames();
         if (names.Count == 0) {
             Console.WriteLine("No employees found. Ask a manager for help.");
         } else {
-            string name = this.Select("Select an employee", names);
+            string name = this.SelectList("Select an employee", names);
             this.employee = this.employeeService.GetOne(name);
             List<string> orders = this.orderService.GetOrderStrings();
-
             if (orders.Count == 0) {
                 Console.WriteLine("No orders found. Have a customer place an order to start working on it.");
             } else {
@@ -90,7 +88,7 @@ class UI
             if (orderStrings.Find(x => x == "end") == null) { // add the end option if it's not there
                 orderStrings.Add("end");
             }
-            string selectedOrder = this.Select("Select an order", orderStrings); // decide on order, or end
+            string selectedOrder = this.SelectList("Select an order", orderStrings); // decide on order, or end
             if (selectedOrder == "end") {break;}
             string id = selectedOrder.Split("\t")[0];
             Order order = orderService.GetOneOrder(Int32.Parse(id));
@@ -110,14 +108,14 @@ class UI
                     options.Insert(0, "leave order");
                     options.Insert(0, "finish order");
                     }
-                string input = Select("Select a task.", options);
+                string input = SelectList("Select a task.", options);
 
                 if (input == "back") {
                     break;
                     } else {
                         string actionWord = input.Split(" ")[0];
                         string choiceText = "Are you sure you want to " + actionWord + " this order?";
-                        string choice = Select(choiceText, new List<string> {"Yes", "No"});
+                        string choice = SelectArr(choiceText, new string[] {"Yes", "No"});
 
                         if (choice == "Yes") {
                             if      (input == "start order")     {orderService.StartOrder(Int32.Parse(id), this.employee);}
@@ -132,11 +130,11 @@ class UI
 
     void SelectManager() {
         string prompt = "What would you like to do?";
-        List<string> choices = ["manage requests", "manage orders"];
-        string choice = Select(prompt, choices);
+        string[] choices = {"manage requests", "manage orders", "manage employees"};
+        string choice = SelectArr(prompt, choices);
         if      (choice == "manage requests")   {this.ManageRequests();}
         else if (choice == "manage orders")     {this.ManageOrders();}
-        // manage employees
+        else if (choice == "manage employees")  {this.ManageEmployees();}
     }
 
     void ManageRequests() {
@@ -145,25 +143,48 @@ class UI
             if (requestStrings.Find(x => x == "end") == null) { // add the end option if it's not there
                 requestStrings.Add("end");
             }
-            string request = this.Select("Select request", requestStrings); // decide on order, or end
+            string request = this.SelectList("Select request", requestStrings); // decide on order, or end
             if (request == "end") {break;}
             string id = request.Split("\t")[0];
             Order order = this.orderService.GetOneOrder(Int32.Parse(id));
-            this.DisplayOrder(order); // display request information
+            this.DisplayOrder(order);
+
             while (true) { // internal loop for actions
-                List<string> options = ["approve", "reject", "back"];
-                string action = Select("Select a task.", options);
-                if (action == "back") {break;}
-                string confirmPrompt = "Are you sure you want to " + action + " this request?";
-                string confirm = Select(confirmPrompt, new List<string> {"Yes", "No"});
-                if (action == "approve" && confirm == "Yes") {
-                    this.orderService.ApproveRequest(Int32.Parse(id));
-                    Console.WriteLine("Request approved.");
-                    break;
+
+                string[] options = {"approve", "reject", "back"};
+                string option = SelectArr("Select a task.", options);
+
+                if (option == "approve") {
+                    DateTime suggestedDate = this.orderService.SuggestOrderDate();
+                    string suggestedDateString = suggestedDate.ToString("d");
+                    string actionPrompt = "Select a date for the order.";
+                    string[] actions = {"Suggested Date: " + suggestedDateString, "Custom Date", "Back"};
+                    string action = SelectArr(actionPrompt, actions);
+
+                    if (action == "Custom Date") {
+                        string customDate = AnsiConsole.Ask<string>("Enter a date for this order (mm/dd/yyyy).");
+                        string confirm = SelectArr("Confirm date?", new string[] {"Yes", "No"});
+                        if (confirm == "Yes") {
+                            DateTime newDate = DateTime.ParseExact(customDate, "d", CultureInfo.InvariantCulture);
+                            this.orderService.AdjustDate(Int32.Parse(id), newDate);
+                            // try catch
+                            // Console.WriteLine("Unable to read date. Make sure your date is in the correct format.");
+                        }
+                    } else if (action == "Suggested Date") {
+                        string confirm = SelectArr("Confirm date?", new string[] {"Yes", "No"});
+                        if (confirm == "Yes") {
+                            this.orderService.AdjustDate(Int32.Parse(id), suggestedDate);
+                        }
                     }
-                else if (action == "reject" && confirm == "Yes") {
-                    this.orderService.RejectRequest(order);
-                    Console.WriteLine("Request rejected.");
+                } else if (option == "reject") {
+                    string confirmPrompt = "Are you sure you want to reject this request?";
+                    string confirm = SelectArr(confirmPrompt, new string[] {"Yes", "No"});
+
+                    if (confirm == "Yes") {
+                        this.orderService.RejectRequest(order);
+                        Console.WriteLine("Request rejected.");
+                    }
+                } else {
                     break;
                 }
             }
@@ -171,14 +192,14 @@ class UI
         
     }
 
-    public void ManageOrders() {
+    void ManageOrders() {
         
         while (true) {
             List<string> orderStrings = this.orderService.GetOrderStrings();
             if (orderStrings.Find(x => x == "end") == null) { // add the end option if it's not there
                 orderStrings.Add("end");
             }
-            string selectedOrder = this.Select("Select order", orderStrings); // decide on order, or end
+            string selectedOrder = this.SelectList("Select order", orderStrings); // decide on order, or end
             if (selectedOrder == "end") {break;}
             string id = selectedOrder.Split("\t")[0];
             Order order = orderService.GetOneOrder(Int32.Parse(id));
@@ -190,13 +211,13 @@ class UI
                 } else if (order.GetStatus() == "finished") {
                     options.Insert(0, "deliver order");
                 }
-                string action = Select("Select a task.", options);
+                string action = SelectList("Select a task.", options);
                 if (action == "back") {
                     break;
                 } else {
                     string actionWord = action.Split(" ")[0];
                     string confirmText = "Are you sure you want to " + actionWord + " this order?";
-                    string confirmChoice = Select(confirmText, new List<string> {"Yes", "No"});
+                    string confirmChoice = SelectArr(confirmText, new string[] {"Yes", "No"});
                     if (actionWord == "finish" && confirmChoice == "Yes") {
                         this.orderService.FinishOrderManager(order.GetID());
                         Console.WriteLine("Order Finished.");
@@ -214,6 +235,40 @@ class UI
                 }
             }
         }
+    }
+
+    void ManageEmployees() {
+        while(true) {
+            List<string> names = this.employeeService.GetNames();
+            if (names.Find(x => x == "**End**") == null) {
+                names.Add("**End**");
+            }
+            if (names.Find(x => x == "**New Employee**") == null) { 
+                names.Insert(0, "**New Employee**");
+            }
+            string choice = SelectList("Select an employee to remove, or select New Employee to add one.", names);
+            if (choice == "**End**") {
+                break;
+            } else if (choice == "New Employee") {
+                while(true) {
+                    string newName = AnsiConsole.Ask<string>("Enter the name of the new employee.");
+                    List<string> notAllowed = ["**New Employee**", "**End**"];
+                    if (notAllowed.Find(x => x == newName) != null) {
+                        Console.WriteLine("This name is reserved by the program. Please enter a different name.");
+                    } else {
+                        this.employeeService.Add(newName);
+                        break;
+                    }
+                }
+            } else {
+                string confirm = SelectArr("Delete" + choice + "?", new string[] {"Yes", "No"});
+                if (confirm == "Yes") {
+                    this.employeeService.Remove(choice);
+                }
+            }
+            
+        }
+        
     }
 
     void DisplayOrder(Order order) {
@@ -238,7 +293,15 @@ class UI
         }
     }
 
-    string Select(string title, List<string> choices) {
+    string SelectList(string title, List<string> choices) {
+        return AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title(title)
+                .AddChoices(choices)
+            );
+    }
+
+    string SelectArr(string title, string[] choices) {
         return AnsiConsole.Prompt(
             new SelectionPrompt<string>()
                 .Title(title)

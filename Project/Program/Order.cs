@@ -12,18 +12,19 @@ public class Order
     [JsonInclude] private string name;
     [JsonInclude] private List<Employee> employees;
     [JsonInclude] private string status;
+    [JsonInclude] private DateTime date;
 
-    public Order(int id, string type, string device, string name, string status) {
+    public Order(int id, string type, string device, string name, string status, DateTime date) {
         this.id = id;
         this.type = type;
         this.device = device;
         this.name = name;
         this.employees = [];
         this.status = status;
+        this.date = date;
     }
 
     // getters and setters
-
     public int GetID() {
         return this.id;
     }
@@ -36,11 +37,14 @@ public class Order
     public string GetName() {
         return this.name;
     }
-    public List<Employee> GetEmployees() { // deference of a possibly null reference
+    public List<Employee> GetEmployees() {
         return this.employees;
     }
     public string GetStatus() {
         return this.status;
+    }
+    public DateTime GetDate() {
+        return this.date;
     }
 
     public void SetType(string type) {
@@ -54,6 +58,9 @@ public class Order
     }
     public void SetStatus(string status) {
         this.status = status;
+    }
+    public void SetDate(DateTime date) {
+        this.date = date;
     }
     public void AddEmployee(Employee employee) {
         this.employees.Add(employee);

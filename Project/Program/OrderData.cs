@@ -7,52 +7,64 @@ using System.Text.Json.Nodes;
 class OrderData
 {
     [JsonInclude] private List<Order> orders;
+    [JsonInclude] private double defaultDays;
 
     public OrderData()
     {
-        this.orders = this.LoadOrders();
+        this.LoadOrderData();
     }
     public List<Order> GetOrders() {
         return this.orders;
     }
     public void Add(Order order) {
         this.orders.Add(order);
-        this.SaveOrders();
+        this.SaveOrderData();
     }
     public Order GetOne(int id) {
         return this.orders.Find(x => x.GetID() == id);
     }
+    public double GetDefaultDays() {
+        return this.defaultDays;
+    }
     public void Remove(Order order) {
         this.orders.Remove(order);
-        this.SaveOrders();
+        this.SaveOrderData();
     }
     public void UpdateOrderStatus(int id, string status) {
         this.orders.Find(x => x.GetID() == id).SetStatus(status);
-        this.SaveOrders();
+        this.SaveOrderData();
+    }
+    public void AdjustDate(int id, DateTime date) {
+        this.orders.Find(x => x.GetID() == id).SetDate(date);
+        this.SaveOrderData();
     }
     public void AddEmployee(int id, Employee employee) {
         this.orders.Find(x => x.GetID() == id).AddEmployee(employee);
-        this.SaveOrders();
+        this.SaveOrderData();
     }
     public void RemoveEmployee(int id, Employee employee) {
         this.orders.Find(x => x.GetID() == id).RemoveEmployee(employee);
-        this.SaveOrders();
+        this.SaveOrderData();
     }
-    List<Order> LoadOrders() {
+    void LoadOrderData() {
         if (!File.Exists("orders.json")) {
-            File.WriteAllText("orders.json", "{\"orders\":[]}");
+            File.WriteAllText("orders.json", "{\"orders\":[],\"defaultDateRange\":3}");
         }
         string orderImport = File.ReadAllText("orders.json");
         try {
             JsonNode dom = JsonNode.Parse(orderImport)!;
-            JsonArray arr = dom["orders"].AsArray()!;
-            return JsonSerializer.Deserialize<List<Order>>(arr)!;
+            JsonArray newOrders = dom["orders"].AsArray()!;
+            this.orders = JsonSerializer.Deserialize<List<Order>>(newOrders)!;
+            JsonValue newDefaultDays = dom["defaultDays"].AsValue()!;
+            this.defaultDays = JsonSerializer.Deserialize<Double>(newDefaultDays)!;
         } catch (JsonException) {
-            return JsonSerializer.Deserialize<List<Order>>("[]")!;
+            this.orders = [];
+            this.defaultDays = 3.0;
         }
     }
-    void SaveOrders() {
-        string jsonString = JsonSerializer.Serialize(this.orders);
-        File.WriteAllText("orders.json", "{\"orders\":" + jsonString + "}");
+    void SaveOrderData() {
+        string ordersString = JsonSerializer.Serialize(this.orders);
+        string defaultDaysString = JsonSerializer.Serialize(this.defaultDays);
+        File.WriteAllText("orders.json", "{\"orders\":" + ordersString + ",\"defaultDays\":" + defaultDaysString +"}");
     }
 }

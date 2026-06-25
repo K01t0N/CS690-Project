@@ -42,15 +42,13 @@ class OrderService
     }
 
     public List<string> GetOrderStrings() {
-        // returns order fields separated by tabs
         List<string> orderStrings = [];
-        // 1
         for (int i=0; i<this.orderData.GetOrders().Count; i++) {
             Order order = this.orderData.GetOrders()[i];
             if (order.GetStatus() != "request") {
-                orderStrings.Add(order.GetID() + "\t\t" + order.GetTypeString() + "\t\t" + order.GetDevice() + "\t\t" + order.GetName());
+                orderStrings.Add(order.GetID() + "\t\t" + order.GetTypeString() + "\t\t" + order.GetDevice() + "\t\t" +
+                order.GetName() + "\t\t" + order.GetDate());
             }
-            // 0
         }
         return orderStrings;
     }
@@ -67,12 +65,33 @@ class OrderService
         return orderStrings;
     }
 
-    public int NewOrder(string type, string device, string name) {
+    private static int CompareDates(Order x, Order y) {
+        return x.GetDate().CompareTo(y.GetDate());
+    }
+
+    public DateTime SuggestOrderDate() {
+        List<Order> orders = orderData.GetOrders();
+        if (orders.Count == 0) {
+            return DateTime.Today.AddDays(this.orderData.GetDefaultDays());
+        } else {
+            orders.Sort(CompareDates);
+            DateTime lastDate = orders[-1].GetDate();
+            return lastDate.AddDays(this.orderData.GetDefaultDays());
+        }
+    }
+
+    public int NewOrder(string type, string device, string name, DateTime date) {
         int id = this.NewId();
         string status = "request";
-        Order order = new Order(id, type, device, name, status);
+        List<Order> orders = orderData.GetOrders();
+        DateTime newDate = this.SuggestOrderDate();
+        Order order = new Order(id, type, device, name, status, newDate);
         this.orderData.Add(order);
         return order.GetID();
+    }
+
+    public void AdjustDate(int id, DateTime date) {
+        this.orderData.AdjustDate(id, date);
     }
 
     int NewId() {

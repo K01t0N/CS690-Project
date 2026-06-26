@@ -19,7 +19,7 @@ class OrderService
         List<Order> orders = this.orderData.GetOrders();
         List<Order> filtered = new List<Order>();
         for (int i = 0; i < orders.Count; i++) {
-            if (orders[i].GetStatus() == "order") {
+            if (orders[i].GetStatus() != "request") {
                 filtered.Add(orders[i]);
             }
         }
@@ -41,26 +41,46 @@ class OrderService
         return orderData.GetOne(id);
     }
 
-    public List<string> GetOrderStrings() {
+    public List<string> GetOrderStrings(string sortBy="oldest") {
+        List<Order> orders = this.orderData.GetOrders();
+
+        if (sortBy == "idAsc") {
+            orders.Sort(CompareIDs);
+        } else if (sortBy == "idDesc") {
+            orders.Sort(CompareIDs);
+            orders.Reverse();
+        } else if (sortBy == "oldest") {
+            orders.Sort(CompareDates);
+        } else if (sortBy == "newest") {
+            orders.Sort(CompareDates);
+            orders.Reverse();
+        } else if (sortBy == "nameAsc") {
+            orders.Sort(CompareNames);
+        } else if (sortBy == "nameDesc") {
+            orders.Sort(CompareNames);
+            orders.Reverse();
+        }
+
         List<string> orderStrings = [];
-        for (int i=0; i<this.orderData.GetOrders().Count; i++) {
-            Order order = this.orderData.GetOrders()[i];
+        for (int i=0; i<orders.Count; i++) {
+            Order order = orders[i];
+            DateTime date = order.GetDate();
             if (order.GetStatus() != "request") {
                 orderStrings.Add(order.GetID() + "\t\t" + order.GetTypeString() + "\t\t" + order.GetDevice() + "\t\t" +
-                order.GetName() + "\t\t" + order.GetDate());
+                order.GetName() + "\t\t" + date.ToString("d"));
             }
         }
         return orderStrings;
     }
 
-    public List<string> GetRequestStrings() {
+    public List<string> GetRequestStrings(string sortBy="oldest") {
+        
         List<string> orderStrings = [];
-        for (int i=0; i<this.orderData.GetOrders().Count; i++) {
-            Order order = this.orderData.GetOrders()[i];
+        for (int i=0; i<this.GetRequests().Count; i++) {
+            Order order = this.GetRequests()[i];
             if (order.GetStatus() == "request") {
-                orderStrings.Add(order.GetID() + "\t\t" + order.GetTypeString() + "\t\t" + order.GetDevice() + "\t\t" + order.GetName());
+                orderStrings.Add(order.GetID() + "\t\t" + order.GetTypeString() + "\t\t\t" + order.GetDevice() + "\t\t" + order.GetName());
             }
-            
         }
         return orderStrings;
     }
@@ -69,23 +89,31 @@ class OrderService
         return x.GetDate().CompareTo(y.GetDate());
     }
 
+    private static int CompareIDs(Order x, Order y) {
+        return x.GetID().CompareTo(y.GetID());
+    }
+
+    private static int CompareNames(Order x, Order y) {
+        return x.GetName().CompareTo(y.GetName());
+    }
+
     public DateTime SuggestOrderDate() {
-        List<Order> orders = orderData.GetOrders();
+        List<Order> orders = this.GetOrders();
         if (orders.Count == 0) {
             return DateTime.Today.AddDays(this.orderData.GetDefaultDays());
         } else {
             orders.Sort(CompareDates);
-            DateTime lastDate = orders[-1].GetDate();
+            orders.Reverse();
+            DateTime lastDate = orders[0].GetDate();
             return lastDate.AddDays(this.orderData.GetDefaultDays());
         }
     }
 
-    public int NewOrder(string type, string device, string name, DateTime date) {
+    public int NewOrder(string type, string device, string name) {
         int id = this.NewId();
         string status = "request";
         List<Order> orders = orderData.GetOrders();
-        DateTime newDate = this.SuggestOrderDate();
-        Order order = new Order(id, type, device, name, status, newDate);
+        Order order = new Order(id, type, device, name, status);
         this.orderData.Add(order);
         return order.GetID();
     }

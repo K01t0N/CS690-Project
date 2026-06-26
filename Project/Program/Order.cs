@@ -14,14 +14,14 @@ public class Order
     [JsonInclude] private string status;
     [JsonInclude] private DateTime date;
 
-    public Order(int id, string type, string device, string name, string status, DateTime date) {
+    public Order(int id, string type, string device, string name, string status) {
         this.id = id;
         this.type = type;
         this.device = device;
         this.name = name;
         this.employees = [];
         this.status = status;
-        this.date = date;
+        this.date = default;
     }
 
     // getters and setters

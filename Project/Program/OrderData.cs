@@ -48,7 +48,7 @@ class OrderData
     }
     void LoadOrderData() {
         if (!File.Exists("orders.json")) {
-            File.WriteAllText("orders.json", "{\"orders\":[],\"defaultDateRange\":3}");
+            File.WriteAllText("orders.json", "{\"orders\":[],\"defaultDays\":3}");
         }
         string orderImport = File.ReadAllText("orders.json");
         try {

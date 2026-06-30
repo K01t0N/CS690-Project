@@ -1,6 +1,6 @@
 namespace Program;
 
-class OrderService
+public class OrderService
 {
 
     private OrderData orderData;
@@ -169,18 +169,17 @@ class OrderService
         this.orderData.Remove(order);
     }
 
+    public void RemoveOrderManager(Order order) {
+        this.orderData.Remove(order);
+    }
+
     public bool HasEmployee(int id, Employee employee) {
         return this.orderData.GetOne(id)
         .GetEmployees()
         .Find(x => x.GetName() == employee.GetName()) != null;
     }
-    Order GetOrder(Order order) {
-        return this.orderData.GetOne(order.GetID());
-    }
 
-    public void RemoveOrderManager(Order order) {
-        this.orderData.Remove(order);
-    }
+    
 
 
 }

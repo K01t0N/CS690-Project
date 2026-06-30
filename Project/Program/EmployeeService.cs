@@ -1,6 +1,6 @@
 namespace Program;
 
-class EmployeeService
+public class EmployeeService
 {
     private EmployeeData employeeData;
 

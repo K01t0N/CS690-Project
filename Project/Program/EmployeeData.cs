@@ -4,7 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Nodes;
 
-class EmployeeData
+public class EmployeeData
 {
     [JsonInclude] private List<Employee> employees;
 

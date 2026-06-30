@@ -4,48 +4,57 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Nodes;
 
-class OrderData
+public class OrderData
 {
     [JsonInclude] private List<Order> orders;
     [JsonInclude] private double defaultDays;
 
-    public OrderData()
-    {
+    public OrderData() {
         this.LoadOrderData();
     }
+    
     public List<Order> GetOrders() {
         return this.orders;
     }
+
+    public Order GetOne(int id) {
+        return this.orders.Find(x => x.GetID() == id);
+    }
+
+    public double GetDefaultDays() {
+        return this.defaultDays;
+    }
+
     public void Add(Order order) {
         this.orders.Add(order);
         this.SaveOrderData();
     }
-    public Order GetOne(int id) {
-        return this.orders.Find(x => x.GetID() == id);
-    }
-    public double GetDefaultDays() {
-        return this.defaultDays;
-    }
+    
     public void Remove(Order order) {
         this.orders.Remove(order);
         this.SaveOrderData();
     }
+
     public void UpdateOrderStatus(int id, string status) {
         this.orders.Find(x => x.GetID() == id).SetStatus(status);
         this.SaveOrderData();
     }
+
     public void AdjustDate(int id, DateTime date) {
         this.orders.Find(x => x.GetID() == id).SetDate(date);
         this.SaveOrderData();
     }
+
     public void AddEmployee(int id, Employee employee) {
         this.orders.Find(x => x.GetID() == id).AddEmployee(employee);
         this.SaveOrderData();
     }
+
     public void RemoveEmployee(int id, Employee employee) {
         this.orders.Find(x => x.GetID() == id).RemoveEmployee(employee);
         this.SaveOrderData();
     }
+
     void LoadOrderData() {
         if (!File.Exists("orders.json")) {
             File.WriteAllText("orders.json", "{\"orders\":[],\"defaultDays\":3}");
@@ -62,6 +71,7 @@ class OrderData
             this.defaultDays = 3.0;
         }
     }
+    
     void SaveOrderData() {
         string ordersString = JsonSerializer.Serialize(this.orders);
         string defaultDaysString = JsonSerializer.Serialize(this.defaultDays);

@@ -73,7 +73,7 @@ public class OrderService
         return orderStrings;
     }
 
-    public List<string> GetRequestStrings(string sortBy="oldest") {
+    public List<string> GetRequestStrings() {
         
         List<string> orderStrings = [];
         for (int i=0; i<this.GetRequests().Count; i++) {
@@ -97,6 +97,15 @@ public class OrderService
         return x.GetName().CompareTo(y.GetName());
     }
 
+    public int NewOrder(string type, string device, string name) {
+        int id = this.NewId();
+        string status = "request";
+        List<Order> orders = orderData.GetOrders();
+        Order order = new Order(id, type, device, name, status);
+        this.orderData.Add(order);
+        return order.GetID();
+    }
+
     public DateTime SuggestOrderDate() {
         List<Order> orders = this.GetOrders();
         if (orders.Count == 0) {
@@ -107,15 +116,6 @@ public class OrderService
             DateTime lastDate = orders[0].GetDate();
             return lastDate.AddDays(this.orderData.GetDefaultDays());
         }
-    }
-
-    public int NewOrder(string type, string device, string name) {
-        int id = this.NewId();
-        string status = "request";
-        List<Order> orders = orderData.GetOrders();
-        Order order = new Order(id, type, device, name, status);
-        this.orderData.Add(order);
-        return order.GetID();
     }
 
     public void AdjustDate(int id, DateTime date) {
@@ -141,30 +141,37 @@ public class OrderService
         this.orderData.UpdateOrderStatus(id, "started");
         this.orderData.AddEmployee(id, employee);
     }
+
     public void FinishOrder(int id, Employee employee) {
         if (this.HasEmployee(id, employee)) {
            this.orderData.UpdateOrderStatus(id, "waiting for approval");
         }
     }
+
     public void JoinOrder(int id, Employee employee) {
         if (!this.HasEmployee(id, employee)) {
             this.orderData.AddEmployee(id, employee);
         }
     }
+
     public void LeaveOrder(int id, Employee employee) {
         if (this.HasEmployee(id, employee)) {
             this.orderData.RemoveEmployee(id, employee);
         }
     }
+
     public void ApproveRequest(int id) {
         this.orderData.UpdateOrderStatus(id, "not started");
     }
+
     public void RejectRequest(Order order) {
         this.orderData.Remove(order);
     }
+
     public void FinishOrderManager(int id) {
         this.orderData.UpdateOrderStatus(id, "finished");
     }
+
     public void DeliverOrderManager(Order order) {
         this.orderData.Remove(order);
     }
@@ -178,8 +185,5 @@ public class OrderService
         .GetEmployees()
         .Find(x => x.GetName() == employee.GetName()) != null;
     }
-
-    
-
 
 }

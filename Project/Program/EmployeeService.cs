@@ -26,8 +26,8 @@ public class EmployeeService
     }
 
     public void Add(string name) {
-        Employee e = new Employee(name);
-        this.employeeData.Add(e);
+        Employee employee = new Employee(name);
+        this.employeeData.Add(employee);
     }
 
     public void Remove(string name) {

@@ -55,7 +55,7 @@ public class OrderData
         this.SaveOrderData();
     }
 
-    void LoadOrderData() {
+    public void LoadOrderData() {
         if (!File.Exists("orders.json")) {
             File.WriteAllText("orders.json", "{\"orders\":[],\"defaultDays\":3}");
         }
@@ -72,7 +72,7 @@ public class OrderData
         }
     }
     
-    void SaveOrderData() {
+    public void SaveOrderData() {
         string ordersString = JsonSerializer.Serialize(this.orders);
         string defaultDaysString = JsonSerializer.Serialize(this.defaultDays);
         File.WriteAllText("orders.json", "{\"orders\":" + ordersString + ",\"defaultDays\":" + defaultDaysString +"}");

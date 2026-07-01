@@ -25,7 +25,7 @@ public class EmployeeData
         this.employees.Remove(this.GetOne(name));
         this.SaveEmployees();
     }
-    List<Employee> LoadEmployees() {
+    public List<Employee> LoadEmployees() {
         if (!File.Exists("employees.json")) {
             File.WriteAllText("employees.json",
             "{\"employees\":[]}");
@@ -39,7 +39,7 @@ public class EmployeeData
             return JsonSerializer.Deserialize<List<Employee>>("[]")!;
         }
     }
-    void SaveEmployees() {
+    public void SaveEmployees() {
         string jsonString = JsonSerializer.Serialize(this.employees);
         File.WriteAllText("employees.json", "{\"employees\":" + jsonString + "}");
     }

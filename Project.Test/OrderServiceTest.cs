@@ -7,31 +7,21 @@ public class OrderServiceTest
     OrderData orderData;
     Random rand;
     OrderService orderService;
-    EmployeeData employeeData;
-    EmployeeService employeeService;
-
+    
     public OrderServiceTest() {
         this.orderData = new OrderData();
         this.rand = new Random();
         this.orderService = new OrderService(this.orderData, rand);
-        this.employeeData = new EmployeeData();
-        this.employeeService = new EmployeeService(this.employeeData);
 
         List<Order> orders = orderService.GetAll();
         for (int i=0; i<orders.Count; i++) {
             this.orderService.RemoveOrderManager(orders[i]);
         }
-        List<Employee> employees = employeeService.GetAll();
-        for (int i=0; i<employees.Count; i++) {
-            this.employeeService.Remove(employees[i].GetName());
-        }
 
     }
 
     [Fact]
-    public void GetAllTest()
-    {
-        Console.Write("\nnumber of orders: " + this.orderService.GetAll() + "\n");
+    public void GetAllTest() {
         int id1 = this.orderService.NewOrder("Stability", "Macbook", "John Doe");
         int id2 = this.orderService.NewOrder("Screen", "PC Laptop", "Jane Doe");
         List<Order> all = this.orderService.GetAll();
@@ -45,8 +35,7 @@ public class OrderServiceTest
     }
 
     [Fact]
-    public void GetRequestsOrdersTest() // Tests for requests and orders
-    {
+    public void GetRequestsOrdersTest() {
         int id1 = this.orderService.NewOrder("Stability", "Macbook", "John Doe");
         int id2 = this.orderService.NewOrder("Screen", "PC Laptop", "Jane Doe");
         int id3 = this.orderService.NewOrder("Performance", "PC Desktop", "Another Person");
@@ -67,15 +56,8 @@ public class OrderServiceTest
         this.orderService.RemoveOrderManager(order3);
     }
 
-    // GetOneOrder()
-    // GetOrderStrings()
-    // GetRequestStrings()
-    // static CompareDates, CompareIDs, CompareNames
-    // SuggestOrderDate()
-
     [Fact]
-    public void NewOrderTest()
-    {
+    public void NewOrderTest() {
         int id = this.orderService.NewOrder("Stability", "Macbook", "John Doe");
         Order order = this.orderService.GetOneOrder(id);
         Assert.Equal(id, order.GetID());
@@ -85,6 +67,18 @@ public class OrderServiceTest
         Assert.Equal("request", order.GetStatus());
         Assert.Empty(order.GetEmployees());
         this.orderService.RemoveOrderManager(order);
+    }
+
+    [Fact]
+    public void SuggestOrderDateTest() {
+        int id = this.orderService.NewOrder("Stability", "Macbook", "John Doe");
+        DateTime newDate = new DateTime(2026, 8, 1);
+        this.orderService.ApproveRequest(id);
+        this.orderService.AdjustDate(id, newDate);
+        DateTime suggestedDate = this.orderService.SuggestOrderDate();
+        newDate = newDate.AddDays(this.orderData.GetDefaultDays());
+        Assert.Equal(suggestedDate, newDate); // expected 8/4, got 8/1
+        this.orderService.RemoveOrderManager(this.orderService.GetOneOrder(id));
     }
 
     [Fact]
@@ -153,8 +147,7 @@ public class OrderServiceTest
     }
 
     [Fact]
-    public void LeaveOrderTwoEmployeesTest()
-    {
+    public void LeaveOrderTwoEmployeesTest() {
         Employee employee1 = new Employee("Jane Doe");
         Employee employee2 = new Employee("John Doe");
         int id = this.orderService.NewOrder("Performance", "PC Laptop", "New Customer");
@@ -182,8 +175,7 @@ public class OrderServiceTest
     }
 
     [Fact]
-    public void ApproveRequestTest()
-    {
+    public void ApproveRequestTest() {
         int id = this.orderService.NewOrder("Stability", "Macbook", "John Doe");
         Order order = this.orderService.GetOneOrder(id);
         Assert.Equal("request", order.GetStatus());
@@ -193,8 +185,7 @@ public class OrderServiceTest
     }
 
     [Fact]
-    public void RejectRequestTest()
-    {
+    public void RejectRequestTest() {
         int id = this.orderService.NewOrder("Stability", "Macbook", "John Doe");
         Order order = this.orderService.GetOneOrder(id);
         this.orderService.RejectRequest(order);

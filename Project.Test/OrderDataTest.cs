@@ -40,11 +40,6 @@ public class OrderDataTest
     }
 
     [Fact]
-    public void GetDefaultDaysTest() {
-
-    }
-
-    [Fact]
     public void RemoveOrderTest() {
         Order order = new Order(10001, "Screen", "Laptop", "Jane Doe", "request");
         this.orderData.Add(order);
@@ -101,9 +96,18 @@ public class OrderDataTest
         this.orderData.Remove(returedOrder);
     }
 
-    // GetDefaultDays
-
-    // LoadOrderData
-    // SaveOrderData
+    [Fact]
+    public void SaveLoadTest() {
+        int id = 10001;
+        Order before = new Order(id, "Screen", "PC Laptop", "Jane Doe", "request");
+        this.orderData.Add(before);
+        this.orderData.SaveOrderData();
+        this.orderData.LoadOrderData();
+        Order after = this.orderData.GetOne(id);
+        Assert.Equal(before.GetID(), after.GetID());
+        Assert.Equal(before.GetTypeString(), after.GetTypeString());
+        Assert.Equal(before.GetDevice(), after.GetDevice());
+        Assert.Equal(before.GetName(), after.GetName());
+    }
 
 }

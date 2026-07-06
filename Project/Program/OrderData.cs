@@ -40,10 +40,21 @@ public class OrderData
         this.SaveOrderData();
     }
 
+    public void UpdateTaskStatus(int id, int index, string status) {
+        this.orders.Find(x => x.GetID() == id).GetOneTask(index).SetStatus(status);
+        this.SaveOrderData();
+    }
+
     public void AdjustDate(int id, DateTime date) {
         this.orders.Find(x => x.GetID() == id).SetDate(date);
         this.SaveOrderData();
     }
+
+    public void AddTask(int id, int index, string text) {
+        Task task = new Task(index, text);
+        this.orders.Find(x => x.GetID() == id).AddTask(task);
+        this.SaveOrderData();
+    } 
 
     public void AddEmployee(int id, Employee employee) {
         this.orders.Find(x => x.GetID() == id).AddEmployee(employee);
@@ -57,7 +68,7 @@ public class OrderData
 
     public void LoadOrderData() {
         if (!File.Exists("orders.json")) {
-            File.WriteAllText("orders.json", "{\"orders\":[],\"defaultDays\":3}");
+            File.WriteAllText("orders.json", "{\"orders\":[],\"defaultDays\":3.0}");
         }
         string orderImport = File.ReadAllText("orders.json");
         try {

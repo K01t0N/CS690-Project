@@ -13,6 +13,7 @@ public class Order
     [JsonInclude] private List<Employee> employees;
     [JsonInclude] private string status;
     [JsonInclude] private DateTime date;
+    [JsonInclude] private List<Task> tasks;
 
     public Order(int id, string type, string device, string name, string status) {
         this.id = id;
@@ -22,6 +23,7 @@ public class Order
         this.employees = [];
         this.status = status;
         this.date = default;
+        this.tasks = [];
     }
 
     // getters and setters
@@ -46,6 +48,12 @@ public class Order
     public DateTime GetDate() {
         return this.date;
     }
+    public List<Task> GetTasks() {
+        return this.tasks;
+    }
+    public Task GetOneTask(int index) {
+        return this.tasks.Find(x => x.GetIndex() == index);
+    }
 
     public void SetType(string type) {
         this.type = type;
@@ -67,6 +75,24 @@ public class Order
     }
     public void RemoveEmployee(Employee employee) {
         this.employees.Remove(employee);
+    }
+    public void SetTasks(List<Task> tasks) {
+        this.tasks = tasks;
+    }
+    public void SetOneTask(int index, string status) {
+        this.tasks.Find(x => x.GetIndex() == index).SetStatus(status);
+    }
+    public void AddTask(Task task) {
+        this.tasks.Add(task);
+    }
+    public void RemoveTask(Task task) {
+        this.tasks.Remove(task);
+    }
+    public void AddEmployeeToTask(int index, Employee employee) {
+        this.tasks.Find(x => x.GetIndex() == index).AddEmployee(employee);
+    }
+    public void RemoveEmployeeFromTask(int index, Employee employee) {
+        this.tasks.Find(x => x.GetIndex() == index).RemoveEmployee(employee);
     }
 
 }

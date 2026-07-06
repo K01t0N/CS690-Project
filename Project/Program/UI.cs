@@ -5,16 +5,17 @@ using System.Globalization;
 
 class UI
 {
-    private OrderService orderService;
-    private EmployeeService employeeService;
+    private OrderService os;
+    private EmployeeService es;
     private Employee employee;
 
-    public UI(OrderService orderService, EmployeeService employeeService) {
-        this.orderService = orderService;
-        this.employeeService = employeeService;
+    public UI(OrderService os, EmployeeService es) {
+        this.os = os;
+        this.es = es;
     }
     
     public void Start() {
+        AnsiConsole.Clear();
         string mode = this.SelectArr("Select Mode.", new string[] {"customer", "employee", "manager"});
         if      (mode == "customer")    {this.SelectCustomer();}
         else if (mode == "employee")    {this.SelectEmployee();}
@@ -34,7 +35,7 @@ class UI
             "Other Damage", "Lost Data", "Slower than Usual"
             });
 
-        type = type.Replace("Won't Turn On", "Performance")
+        type = type.Replace("Won't Turn On", "Power")
             .Replace("Frequent Crashes", "Stability")
             .Replace("Broken Screen", "Screen")
             .Replace("Other Damage", "Hardware Other")
@@ -42,24 +43,25 @@ class UI
             .Replace("Slower than Usual", "Performance");
         string device = AnsiConsole.Ask<string>("Enter your Device.");
         string name = AnsiConsole.Ask<string>("Enter your Name.");
-        int orderNumber = orderService.NewOrder(type, device, name);
+        int orderNumber = os.NewOrder(type, device, name);
         Console.WriteLine("Your order number is " + orderNumber);
     }
 
     void ViewOrder() {
         string orderNumber = AnsiConsole.Ask<string>("Enter your Order Number.");
-        Order order = orderService.GetOneOrder(Int32.Parse(orderNumber));
+        Order order = os.GetOneOrder(Int32.Parse(orderNumber));
 
         if (order == null) {
             Console.WriteLine("No order matches this number." + 
             "Either the number is incorrect, the order was rejected, or it was already picked up.");
         } else {
-            Console.WriteLine("Here is your Order:");
-            Console.WriteLine("order type: " + order.GetTypeString());
-            Console.WriteLine("order device: " + order.GetDevice());
-            Console.WriteLine("order name: " + order.GetName());
-            Console.WriteLine("order status: " + order.GetStatus());
-            Console.WriteLine("order date: " + order.GetDate());
+            Console.Write("id:", order.GetID(), ", type:", order.GetTypeString(), ", device:", order.GetDevice(),
+            ", name:", order.GetName(), "status:", order.GetStatus());
+
+            for (int i=0; i<order.GetTasks().Count; i++) {
+                Task task = order.GetTasks()[i];
+                Console.WriteLine(task.GetIndex().ToString(), task.GetText(), task.GetEmployees(), task.GetStatus());
+            }
 
             if (order.GetStatus() == "finished") {
                 Console.WriteLine("Your order is ready to be picked up.");
@@ -68,95 +70,79 @@ class UI
     }
 
     void SelectEmployee() {
-        List<string> names = employeeService.GetNames();
+        List<string> names = es.GetNames();
         if (names.Count == 0) {
             Console.WriteLine("No employees found. Ask a manager for help.");
         } else {
             string name = this.SelectList("Select an employee", names);
-            this.employee = this.employeeService.GetOne(name);
-            List<string> orders = this.orderService.GetOrderStrings();
+            this.employee = this.es.GetOne(name);
+            List<Order> orders = this.os.GetOrders();
             if (orders.Count == 0) {
                 Console.WriteLine("No orders found. Have a customer place an order to start working on it.");
             } else {
-                this.EditOrders();
+                this.EditOrdersNew();
             }
         }
     }
 
-    void EditOrders() {
-        
+    void EditOrdersNew() {
+
         string sortBy = "oldest";
-        List<string> orders = this.orderService.GetOrderStrings(sortBy);
+        List<Order> orders;
 
         while (true) {
 
-            orders = this.orderService.GetOrderStrings(sortBy);
+            orders = this.os.GetOrders(sortBy);
 
-            if (orders.Find(x => x == "Sort Options") == null) {
-                orders.Add("Sort Options");
+            Table table = new Table();
+            List<string> columns = ["id", "type", "device", "name", "date", "status"]; // employees
+            for (int i=0; i<columns.Count; i++) {
+                table.AddColumn(columns[i]);
             }
-            if (orders.Find(x => x == "end") == null) {
-                orders.Add("end");
-            }
-            string selectedOrder = this.SelectList("Select an order", orders);
 
-            if (selectedOrder == "end") {
+            List<string> options = [];
+            for (int i=0; i<orders.Count; i++) {
+                Order order = orders[i];
+                string id = order.GetID().ToString();
+                string date = order.GetDate().ToString("d");
+                table.AddRow(id, order.GetTypeString(), order.GetDevice(), order.GetName(), date, order.GetStatus());
+                options.Add(order.GetID().ToString());
+            }
+
+            AnsiConsole.Write(table);
+            options.Add("Sorting Options");
+            options.Add("End");
+            string option = SelectList("Select an order.", options);
+
+            if (option == "End") {
+                AnsiConsole.Clear();
                 break;
-            } else if (selectedOrder == "Sort Options") {
+            } else if (option == "Sorting Options") {
                 string[] sortOptions = {"Order Number Ascending", "Order Number Descending",
                 "Date Ascending (Default)", "Date Descending","Name Ascending", "Name Descending"};
                 sortBy = SelectArr("How would you like to sort?", sortOptions);
-                if (sortBy == "Order Number Ascending") {
-                    orders = this.orderService.GetOrderStrings("idAsc");
-                } else if (sortBy == "Order Number Descending") {
-                    orders = this.orderService.GetOrderStrings("idDesc");
-                } else if (sortBy == "Date Ascending") {
-                    orders = this.orderService.GetOrderStrings("oldest");
-                } else if (sortBy == "Date Descending") {
-                    orders = this.orderService.GetOrderStrings("newest");
-                } else if (sortBy == "Name Ascending") {
-                    orders = this.orderService.GetOrderStrings("nameAsc");
-                } else if (sortBy == "Name Descending") {
-                    orders = this.orderService.GetOrderStrings("nameDesc");
-                }
+                // this.os.GetOrders(sortBy);
+                AnsiConsole.Clear();
             } else {
-
-                string id = selectedOrder.Split("\t")[0];
-                Order order = orderService.GetOneOrder(Int32.Parse(id));
-                this.DisplayOrder(order);
                 while (true) {
-                    List<string> options = ["back"];
-                    string status = order.GetStatus();
-                    bool hasEmployee = orderService.HasEmployee(Int32.Parse(id), this.employee);
+                    int id = Int32.Parse(option);
+                    Order order = this.os.GetOneOrder(id);
+                    this.DisplayOrder(order);
+                    List<string> taskOptions = this.os.GetTaskOptions(id, this.employee);
+                    string input = SelectList("Select an option.", taskOptions);
 
-                    if (status == "not started") {
-                        options.Insert(0, "start order");
-                        }
-                    else if (status == "started" && !hasEmployee) {
-                        options.Insert(0, "join order");
-                        }
-                    else if (status == "started" && hasEmployee) {
-                        options.Insert(0, "leave order");
-                        options.Insert(0, "finish order");
-                        }
-                    string input = SelectList("Select a task.", options);
-
-                    if (input == "back") {
+                    if (input == "Back") {
+                        AnsiConsole.Clear();
                         break;
                     } else {
-                        string actionWord = input.Split(" ")[0];
-                        string choiceText = "Are you sure you want to " + actionWord + " this order?";
-                        string choice = SelectArr(choiceText, new string[] {"Yes", "No"});
-
-                        if (choice == "Yes") {
-                            if      (input == "start order")     {orderService.StartOrder(Int32.Parse(id), this.employee);}
-                            else if (input == "finish order")    {orderService.FinishOrder(Int32.Parse(id), this.employee);}
-                            else if (input == "join order")      {orderService.JoinOrder(Int32.Parse(id), this.employee);}
-                            else if (input == "leave order")     {orderService.LeaveOrder(Int32.Parse(id), this.employee);}
+                        string confirm = SelectArr("Are you sure?", new string[] {"Yes", "No"});
+                        if (confirm == "Yes") {
+                            this.os.EditOrder(input, id, this.employee);
                         }
                     }
+                    AnsiConsole.Clear();
                 }
-            } 
+            }
         }
     }
 
@@ -164,184 +150,229 @@ class UI
         string prompt = "What would you like to do?";
         string[] choices = {"manage requests", "manage orders", "manage employees"};
         string choice = SelectArr(prompt, choices);
-        if      (choice == "manage requests")   {this.ManageRequests();}
+        if      (choice == "manage requests")   {this.ManageRequestsNew();}
         else if (choice == "manage orders")     {this.ManageOrders();}
         else if (choice == "manage employees")  {this.ManageEmployees();}
     }
 
-    void ManageRequests() {
+    void ManageRequestsNew() {
+
+        List<Order> orders;
+
         while (true) {
-            List<string> requestStrings = this.orderService.GetRequestStrings();
-            if (requestStrings.Find(x => x == "end") == null) {
-                requestStrings.Add("end");
+
+            orders = this.os.GetRequests();
+
+            Table table = new Table();
+            List<string> columns = ["id", "type", "device", "name", "status"];
+            for (int i=0; i<columns.Count; i++) {
+                table.AddColumn(columns[i]);
             }
-            string request = this.SelectList("Select request", requestStrings);
-            if (request == "end") {
+
+            List<string> options = [];
+            for (int i=0; i<orders.Count; i++) {
+                Order order = orders[i];
+                string id = order.GetID().ToString();
+                string date = order.GetDate().ToString("d");
+                table.AddRow(id, order.GetTypeString(), order.GetDevice(), order.GetName(), order.GetStatus());
+                options.Add(order.GetID().ToString());
+            }
+
+            AnsiConsole.Write(table);
+            options.Add("End");
+            string option = SelectList("Select an order.", options);
+
+            if (option == "End") {
+                AnsiConsole.Clear();
                 break;
-            }
-            string id = request.Split("\t")[0];
-            Order order = this.orderService.GetOneOrder(Int32.Parse(id));
-            this.DisplayOrder(order);
+            } else {
+                while (true) {
+                    int id = Int32.Parse(option);
+                    Order order = this.os.GetOneOrder(id);
+                    this.DisplayOrder(order);
+                    string input = SelectArr("Select an option.", new string[] {"approve", "reject", "back"});
+                    if (input == "Back") {
+                        break;
+                    } else {
+                        string confirm = SelectArr("Are you sure?", new string[] {"Yes", "No"});
+                        if (confirm == "Yes" && input == "approve") {
+                            DateTime suggestedDate = this.os.SuggestOrderDate();
+                            string suggestedDateString = suggestedDate.ToString("d");
+                            string[] actions = {"Suggested Date: " + suggestedDateString, "Custom Date", "Back"};
+                            string action = SelectArr("Select a date for the order.", actions);
 
-            while (true) {
-
-                string[] options = {"approve", "reject", "back"};
-                string option = SelectArr("Select a task.", options);
-
-                if (option == "approve") {
-                    DateTime suggestedDate = this.orderService.SuggestOrderDate();
-                    string suggestedDateString = suggestedDate.ToString("d");
-                    string actionPrompt = "Select a date for the order.";
-                    string[] actions = {"Suggested Date: " + suggestedDateString, "Custom Date", "Back"};
-                    string action = SelectArr(actionPrompt, actions);
-
-                    if (action == "Custom Date") {
-                        string customDate = AnsiConsole.Ask<string>("Enter a date for this order (mm/dd/yyyy).");
-                        string confirm = SelectArr("Confirm date?", new string[] {"Yes", "No"});
-                        if (confirm == "Yes") {
-                            try {
-                                DateTime newDate = DateTime.ParseExact(customDate, "d", CultureInfo.InvariantCulture);
-                                this.orderService.AdjustDate(Int32.Parse(id), newDate);
-                                this.orderService.ApproveRequest(Int32.Parse(id));
-                            } catch (System.FormatException) {
-                                Console.WriteLine("Unable to read date. Make sure your date is in the correct format.");
+                            if (action == "Custom Date") {
+                                string customDate = AnsiConsole.Ask<string>("Enter a date for this order (mm/dd/yyyy).");
+                                string customDateConfirm = SelectArr("Confirm date?", new string[] {"Yes", "No"});
+                                if (customDateConfirm == "Yes") {
+                                    try {
+                                        DateTime newDate = DateTime.ParseExact(customDate, "d", CultureInfo.InvariantCulture);
+                                        this.os.AdjustDate(id, newDate);
+                                        this.os.ApproveRequest(id);
+                                    } catch (System.FormatException) {
+                                        Console.WriteLine("Unable to read date. Make sure your date is in the correct format.");
+                                    }
+                                    break;
+                                }
+                            } else if (action == "Suggested Date: " + suggestedDateString) {
+                                string suggesteDateConfirm = SelectArr("Confirm date?", new string[] {"Yes", "No"});
+                                if (suggesteDateConfirm == "Yes") {
+                                    this.os.AdjustDate(id, suggestedDate);
+                                    this.os.ApproveRequest(id);
+                                    AnsiConsole.Clear();
+                                }
+                                break;
                             }
+                        } else if (confirm == "Yes" && input == "reject") {
+                            this.os.RemoveOrderManager(order);
                             break;
                         }
-                    } else if (action == "Suggested Date: " + suggestedDateString) {
-                        string confirm = SelectArr("Confirm date?", new string[] {"Yes", "No"});
-                        if (confirm == "Yes") {
-                            this.orderService.AdjustDate(Int32.Parse(id), suggestedDate);
-                            this.orderService.ApproveRequest(Int32.Parse(id));
-                        }
-                        break;
                     }
-                } else if (option == "reject") {
-                    string confirmPrompt = "Are you sure you want to reject this request?";
-                    string confirm = SelectArr(confirmPrompt, new string[] {"Yes", "No"});
-
-                    if (confirm == "Yes") {
-                        this.orderService.RejectRequest(order);
-                        Console.WriteLine("Request rejected.");
-                        break;
-                    }
-                } else {
-                    break;
+                    AnsiConsole.Clear();
                 }
             }
         }
-        
     }
 
     void ManageOrders() {
 
         string sortBy = "oldest";
-        List<string> orders = this.orderService.GetOrderStrings(sortBy);
-        
-        while (true) {
-            List<string> orderStrings = this.orderService.GetOrderStrings();
-            if (orderStrings.Find(x => x == "end") == null) { // add the end option if it's not there
-                orderStrings.Add("end");
-            }
-            string selectedOrder = this.SelectList("Select an order", orderStrings); // decide on order, or end
+        List<Order> orders;
 
-            if (selectedOrder == "end") {
+        while (true) {
+
+            orders = this.os.GetOrders(sortBy);
+
+            Table table = new Table();
+            List<string> columns = ["id", "type", "device", "name", "date", "status"];
+            for (int i=0; i<columns.Count; i++) {
+                table.AddColumn(columns[i]);
+            }
+
+            List<string> options = [];
+            for (int i=0; i<orders.Count; i++) {
+                Order order = orders[i];
+                string id = order.GetID().ToString();
+                string date = order.GetDate().ToString("d");
+                table.AddRow(id, order.GetTypeString(), order.GetDevice(), order.GetName(), date, order.GetStatus());
+                options.Add(order.GetID().ToString());
+            }
+
+            AnsiConsole.Write(table);
+            options.Add("Sorting Options");
+            options.Add("End");
+            string option = SelectList("Select an order.", options);
+
+            if (option == "End") {
+                AnsiConsole.Clear();
                 break;
-            } else if (selectedOrder == "**Sort Options**") {
+            } else if (option == "Sorting Options") {
                 string[] sortOptions = {"Order Number Ascending", "Order Number Descending",
                 "Date Ascending (Default)", "Date Descending","Name Ascending", "Name Descending"};
                 sortBy = SelectArr("How would you like to sort?", sortOptions);
-                if (sortBy == "Order Number Ascending") {
-                    orders = this.orderService.GetOrderStrings("idAsc");
-                } else if (sortBy == "Order Number Descending") {
-                    orders = this.orderService.GetOrderStrings("idDesc");
-                } else if (sortBy == "Date Ascending") {
-                    orders = this.orderService.GetOrderStrings("oldest");
-                } else if (sortBy == "Date Descending") {
-                    orders = this.orderService.GetOrderStrings("newest");
-                } else if (sortBy == "Name Ascending") {
-                    orders = this.orderService.GetOrderStrings("nameAsc");
-                } else if (sortBy == "Name Descending") {
-                    orders = this.orderService.GetOrderStrings("nameDesc");
-                }
+                this.os.GetOrders(sortBy);
+                AnsiConsole.Clear();
             } else {
-                string id = selectedOrder.Split("\t")[0];
-                Order order = orderService.GetOneOrder(Int32.Parse(id));
+                int id = Int32.Parse(option.Split("\t")[0]);
+                Order order = this.os.GetOneOrder(id);
                 this.DisplayOrder(order);
+
                 while (true) {
-                    List<string> options = ["remove order", "back"];
-                    if (order.GetStatus() == "waiting for approval") {
-                        options.Insert(0, "finish order");
-                    } else if (order.GetStatus() == "finished") {
-                        options.Insert(0, "deliver order");
-                    }
-                    string action = SelectList("Select a task.", options);
-                    if (action == "back") {
+
+                    List<string> orderOptions = this.os.ApproveOrderOptions(id);
+                    string action = SelectList("Select a task.", orderOptions);
+
+                    if (action == "Back") {
+                        AnsiConsole.Clear();
                         break;
                     } else {
-                        string actionWord = action.Split(" ")[0];
-                        string confirmText = "Are you sure you want to " + actionWord + " this order?";
-                        string confirmChoice = SelectArr(confirmText, new string[] {"Yes", "No"});
-                        if (actionWord == "finish" && confirmChoice == "Yes") {
-                            this.orderService.FinishOrderManager(order.GetID());
+                        string confirmChoice = SelectArr("Are you sure?", new string[] {"Yes", "No"});
+                        if (action == "finish order" && confirmChoice == "Yes") {
+                            this.os.FinishOrderManager(order.GetID());
                             Console.WriteLine("Order Finished.");
                             }
-                        else if (actionWord == "deliver" && confirmChoice == "Yes") {
-                            this.orderService.DeliverOrderManager(order);
+                        else if (action == "deliver order" && confirmChoice == "Yes") {
+                            this.os.RemoveOrderManager(order);
                             Console.WriteLine("Order Delivered.");
                             break;
                         }
-                        else if (actionWord == "remove" && confirmChoice == "Yes") {
-                            this.orderService.RemoveOrderManager(order);
+                        else if (action == "remove order" && confirmChoice == "Yes") {
+                            this.os.RemoveOrderManager(order);
                             Console.WriteLine("Order Removed.");
                             break;
                         }
+                        else if (action.StartsWith("Approve Task")) {
+                            int index = Int32.Parse(action.Split(" ")[^1]);
+                            this.os.ApproveTask(id, index);
+                            break;
+                        }
                     }
+                    // AnsiConsole.Clear();
                 }
             }
         }
     }
 
     void ManageEmployees() {
+
+        List<string> names;
+
         while(true) {
-            List<string> names = this.employeeService.GetNames();
-            if (names.Find(x => x == "end") == null) {
-                names.Add("end");
+
+            names = this.es.GetNames();
+            if (names.Find(x => x == "End") == null) {
+                names.Add("End");
             }
             if (names.Find(x => x == "New Employee") == null) { 
                 names.Insert(0, "New Employee");
             }
+            Table table = new Table();
+            table.AddColumn("Employees");
+            for (int i = 0; i < names.Count; i++) {
+                if (names[i] != "End" && names[i] != "New Employee") {
+                    table.AddRow(names[i]);
+                }
+                
+            }
+            AnsiConsole.Write(table);
             string choice = SelectList("Select an employee to remove, or select \"New Employee\" to add one.", names);
-            if (choice == "end") {
+            if (choice == "End") {
+                AnsiConsole.Clear();
                 break;
+                
             } else if (choice == "New Employee") {
+
                 while(true) {
+
                     string newName = AnsiConsole.Ask<string>("Enter the name of the new employee.");
-                    List<string> notAllowed = ["New Employee", "end"];
+                    List<string> notAllowed = ["New Employee", "End"];
                     if (notAllowed.Find(x => x == newName) != null) {
                         Console.WriteLine("This name is reserved by the program. Please enter a different name.");
                     } else {
-                        this.employeeService.Add(newName);
+                        this.es.Add(newName);
                         break;
                     }
                 }
             } else {
                 string confirm = SelectArr("Delete " + choice + "?", new string[] {"Yes", "No"});
                 if (confirm == "Yes") {
-                    this.employeeService.Remove(choice);
+                    this.es.Remove(choice);
                 }
             }
-            
+            AnsiConsole.Clear();
         }
-        
     }
 
     void DisplayOrder(Order order) {
-        Console.WriteLine("order id: " + order.GetID());
-        Console.WriteLine("order type: " + order.GetTypeString());
-        Console.WriteLine("order device: " + order.GetDevice());
-        Console.WriteLine("order name: " + order.GetName());
+        Console.Write("id: " + order.GetID() + ", type: " + order.GetTypeString() + ", device: " + order.GetDevice() + 
+            ", name: " + order.GetName() + ", status: " + order.GetStatus() + "\n\n");
+
         if (order.GetStatus() != "request") {
+            for (int i=0; i<order.GetTasks().Count; i++) {
+                Task task = order.GetTasks()[i];
+                Console.WriteLine(task.GetIndex().ToString() + " - " + task.GetText() + ", Employees: " +
+                task.GetEmployeeNames() + ", Status: " + task.GetStatus());
+            }
             if (order.GetEmployees().Count == 0) {
                 Console.WriteLine("No one has started this order yet.");
             } else {
@@ -353,8 +384,6 @@ class UI
                 string employeeString = String.Join(", ", employeeNames);
                 Console.WriteLine("Employees: " + employeeString);
             }
-            Console.WriteLine("ORDER STATUS: " + order.GetStatus());
-            Console.WriteLine("-----------------------");
         }
     }
 

@@ -49,8 +49,11 @@ class UI
 
     void ViewOrder() {
         string orderNumber = AnsiConsole.Ask<string>("Enter your Order Number.");
-        Order order = os.GetOneOrder(Int32.Parse(orderNumber));
-
+        try {
+            Order order = os.GetOneOrder(Int32.Parse(orderNumber));
+        } catch (System.FormatException) {
+            Console.WriteLine("The order number could not be read. Please make sure the input is a number only.")
+        }
         if (order == null) {
             Console.WriteLine("No order matches this number." + 
             "Either the number is incorrect, the order was rejected, or it was already picked up.");
@@ -106,6 +109,8 @@ class UI
                 string id = order.GetID().ToString();
                 string date = order.GetDate().ToString("d");
                 table.AddRow(id, order.GetTypeString(), order.GetDevice(), order.GetName(), date, order.GetStatus());
+                string info = order.GetID().ToString() + ", " + order.GetTypeString() + ", " + order.GetDevice() + 
+                ", " + order.GetName() + ", " + date + ", " + order.GetStatus();
                 options.Add(info);
             }
 
@@ -174,7 +179,9 @@ class UI
                 string id = order.GetID().ToString();
                 string date = order.GetDate().ToString("d");
                 table.AddRow(id, order.GetTypeString(), order.GetDevice(), order.GetName(), order.GetStatus());
-                options.Add(order.GetID().ToString());
+                string info = order.GetID().ToString() + ", " + order.GetTypeString() + ", " + order.GetDevice() + 
+                ", " + order.GetName() + ", " + date + ", " + order.GetStatus();
+                options.Add(info);
             }
 
             AnsiConsole.Write(table);
@@ -254,7 +261,9 @@ class UI
                 string id = order.GetID().ToString();
                 string date = order.GetDate().ToString("d");
                 table.AddRow(id, order.GetTypeString(), order.GetDevice(), order.GetName(), date, order.GetStatus());
-                options.Add(order.GetID().ToString());
+                string info = order.GetID().ToString() + ", " + order.GetTypeString() + ", " + order.GetDevice() + 
+                ", " + order.GetName() + ", " + date + ", " + order.GetStatus();
+                options.Add(info);
             }
 
             AnsiConsole.Write(table);

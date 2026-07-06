@@ -113,7 +113,7 @@ public class OrderServiceTest
         Employee employee = new Employee("Jane Doe");
         int id = this.orderService.NewOrder("Performance", "PC Laptop", "New Customer");
         this.orderService.ApproveRequest(id);
-        this.orderService.StartOrder(id, employee);
+        this.orderService.EditOrder("Start Order", id, employee);
         Order order = this.orderService.GetOneOrder(id);
         Assert.Equal("started", order.GetStatus());
         this.orderService.RemoveOrderManager(order);
@@ -124,9 +124,15 @@ public class OrderServiceTest
         Employee employee = new Employee("Jane Doe");
         int id = this.orderService.NewOrder("Performance", "PC Laptop", "New Customer");
         this.orderService.ApproveRequest(id);
-        this.orderService.StartOrder(id, employee);
-        this.orderService.FinishOrder(id, employee);
+        this.orderService.EditOrder("Start Order", id, employee);
         Order order = this.orderService.GetOneOrder(id);
+        for (int i = 1; i < order.GetTasks().Count + 1; i++) {
+            this.orderService.EditOrder("Start Task " + i, id, employee);
+            this.orderService.EditOrder("Finish Task " + i, id, employee);
+            this.orderService.FinishTaskManager(id, i);
+        }
+        this.orderService.EditOrder("Finish Order", id, employee);
+        order = this.orderService.GetOneOrder(id);
         Assert.Equal("waiting for approval", order.GetStatus());
         this.orderService.RemoveOrderManager(order);
     }
@@ -137,8 +143,8 @@ public class OrderServiceTest
         Employee employee2 = new Employee("John Doe");
         int id = this.orderService.NewOrder("Performance", "PC Laptop", "New Customer");
         this.orderService.ApproveRequest(id);
-        this.orderService.StartOrder(id, employee1);
-        this.orderService.JoinOrder(id, employee2);
+        this.orderService.EditOrder("Start Order", id, employee1);
+        this.orderService.EditOrder("Join Order", id, employee2);
         Order order = this.orderService.GetOneOrder(id);
         List<Employee> employees = order.GetEmployees();
         Assert.Contains(employee1, employees);
@@ -152,9 +158,9 @@ public class OrderServiceTest
         Employee employee2 = new Employee("John Doe");
         int id = this.orderService.NewOrder("Performance", "PC Laptop", "New Customer");
         this.orderService.ApproveRequest(id);
-        this.orderService.StartOrder(id, employee1);
-        this.orderService.JoinOrder(id, employee2);
-        this.orderService.LeaveOrder(id, employee1);
+        this.orderService.EditOrder("Start Order", id, employee1);
+        this.orderService.EditOrder("Join Order", id, employee2);
+        this.orderService.EditOrder("Leave Order", id, employee1);
         Order order = this.orderService.GetOneOrder(id);
         List<Employee> employees = order.GetEmployees();
         Assert.Single(employees);
@@ -166,8 +172,8 @@ public class OrderServiceTest
         Employee employee = new Employee("Jane Doe");
         int id = this.orderService.NewOrder("Performance", "PC Laptop", "New Customer");
         this.orderService.ApproveRequest(id);
-        this.orderService.StartOrder(id, employee);
-        this.orderService.LeaveOrder(id, employee);
+        this.orderService.EditOrder("Start Order", id, employee);
+        this.orderService.EditOrder("Leave Order", id, employee);
         Order order = this.orderService.GetOneOrder(id);
         List<Employee> employees = order.GetEmployees();
         Assert.Empty(employees);
@@ -188,7 +194,7 @@ public class OrderServiceTest
     public void RejectRequestTest() {
         int id = this.orderService.NewOrder("Stability", "Macbook", "John Doe");
         Order order = this.orderService.GetOneOrder(id);
-        this.orderService.RejectRequest(order);
+        this.orderService.RemoveOrderManager(order);
         List<Order> orders = this.orderService.GetAll();
         Assert.Empty(orders);
     }
@@ -198,10 +204,16 @@ public class OrderServiceTest
         Employee employee = new Employee("Jane Doe");
         int id = this.orderService.NewOrder("Performance", "PC Laptop", "New Customer");
         this.orderService.ApproveRequest(id);
-        this.orderService.StartOrder(id, employee);
-        this.orderService.FinishOrder(id, employee);
-        this.orderService.FinishOrderManager(id);
+        this.orderService.EditOrder("Start Order", id, employee);
         Order order = this.orderService.GetOneOrder(id);
+        for (int i = 1; i < order.GetTasks().Count + 1; i++) {
+            this.orderService.EditOrder("Start Task " + i, id, employee);
+            this.orderService.EditOrder("Finish Task " + i, id, employee);
+            this.orderService.FinishTaskManager(id, i);
+        }
+        this.orderService.EditOrder("waiting for approval", id, employee);
+        this.orderService.FinishOrderManager(id);
+        order = this.orderService.GetOneOrder(id);
         Assert.Equal("finished", order.GetStatus());
         this.orderService.RemoveOrderManager(order);
     }
@@ -211,11 +223,17 @@ public class OrderServiceTest
         Employee employee = new Employee("Jane Doe");
         int id = this.orderService.NewOrder("Performance", "PC Laptop", "New Customer");
         this.orderService.ApproveRequest(id);
-        this.orderService.StartOrder(id, employee);
-        this.orderService.FinishOrder(id, employee);
-        this.orderService.FinishOrderManager(id);
+        this.orderService.EditOrder("Start Order", id, employee);
         Order order = this.orderService.GetOneOrder(id);
-        this.orderService.DeliverOrderManager(order);
+        for (int i = 1; i < order.GetTasks().Count + 1; i++) {
+            this.orderService.EditOrder("Start Task " + i, id, employee);
+            this.orderService.EditOrder("Finish Task " + i, id, employee);
+            this.orderService.FinishTaskManager(id, i);
+        }
+        this.orderService.EditOrder("waiting for approval", id, employee);
+        this.orderService.FinishOrderManager(id);
+        order = this.orderService.GetOneOrder(id);
+        this.orderService.RemoveOrderManager(order);
         List<Order> orders = this.orderService.GetAll();
         Assert.Empty(orders);
     }
@@ -225,7 +243,8 @@ public class OrderServiceTest
         Employee employee = new Employee("Jane Doe");
         int id = this.orderService.NewOrder("Performance", "PC Laptop", "New Customer");
         this.orderService.ApproveRequest(id);
-        this.orderService.StartOrder(id, employee);
+        this.orderData.UpdateOrderStatus(id, "started");
+        this.orderData.AddEmployee(id, employee);
         Order order = this.orderService.GetOneOrder(id);
         this.orderService.RemoveOrderManager(order);
         List<Order> orders = this.orderService.GetAll();
@@ -237,7 +256,8 @@ public class OrderServiceTest
         Employee employee = new Employee("Jane Doe");
         int id = this.orderService.NewOrder("Performance", "PC Laptop", "New Customer");
         this.orderService.ApproveRequest(id);
-        this.orderService.StartOrder(id, employee);
+        this.orderData.UpdateOrderStatus(id, "started");
+        this.orderData.AddEmployee(id, employee);
         Order order = this.orderService.GetOneOrder(id);
         bool hasEmployee = this.orderService.HasEmployee(id, employee);
         Assert.True(hasEmployee);

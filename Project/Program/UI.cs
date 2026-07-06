@@ -80,12 +80,12 @@ class UI
             if (orders.Count == 0) {
                 Console.WriteLine("No orders found. Have a customer place an order to start working on it.");
             } else {
-                this.EditOrdersNew();
+                this.EditOrders();
             }
         }
     }
 
-    void EditOrdersNew() {
+    void EditOrders() {
 
         string sortBy = "oldest";
         List<Order> orders;
@@ -106,7 +106,7 @@ class UI
                 string id = order.GetID().ToString();
                 string date = order.GetDate().ToString("d");
                 table.AddRow(id, order.GetTypeString(), order.GetDevice(), order.GetName(), date, order.GetStatus());
-                options.Add(order.GetID().ToString());
+                options.Add(info);
             }
 
             AnsiConsole.Write(table);
@@ -121,7 +121,6 @@ class UI
                 string[] sortOptions = {"Order Number Ascending", "Order Number Descending",
                 "Date Ascending (Default)", "Date Descending","Name Ascending", "Name Descending"};
                 sortBy = SelectArr("How would you like to sort?", sortOptions);
-                // this.os.GetOrders(sortBy);
                 AnsiConsole.Clear();
             } else {
                 while (true) {
@@ -293,21 +292,23 @@ class UI
                             }
                         else if (action == "deliver order" && confirmChoice == "Yes") {
                             this.os.RemoveOrderManager(order);
+                            AnsiConsole.Clear();
                             Console.WriteLine("Order Delivered.");
                             break;
                         }
                         else if (action == "remove order" && confirmChoice == "Yes") {
                             this.os.RemoveOrderManager(order);
+                            AnsiConsole.Clear();
                             Console.WriteLine("Order Removed.");
                             break;
                         }
-                        else if (action.StartsWith("Approve Task")) {
+                        else if (action.StartsWith("Approve Task") && confirmChoice == "Yes") {
                             int index = Int32.Parse(action.Split(" ")[^1]);
-                            this.os.ApproveTask(id, index);
+                            this.os.FinishTaskManager(id, index);
+                            AnsiConsole.Clear();
                             break;
                         }
                     }
-                    // AnsiConsole.Clear();
                 }
             }
         }

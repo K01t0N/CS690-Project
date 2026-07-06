@@ -163,7 +163,7 @@ public class OrderService
         string status = this.orderData.GetOne(id).GetOneTask(index).GetStatus();
         int numEmployees = this.orderData.GetOne(id).GetOneTask(index).GetEmployees().Count;
         if (status == "waiting for approval" && numEmployees > 0) {
-            this.orderData.GetOne(id).GetOneTask(index).SetStatus("finished");
+            this.orderData.UpdateTaskStatus(id, index, "finished");
         }
     }
 
@@ -204,7 +204,6 @@ public class OrderService
                             string status = order.GetOneTask(j).GetStatus();
                             if (status == "not started" || status == "started" || status == "waiting for approval") {
                                 unfinished = true;
-                                Console.WriteLine("index: " + index + "status " + order.GetOneTask(j).GetStatus());
                             }
                         }
                         if (unfinished == false) {
@@ -262,10 +261,6 @@ public class OrderService
             int index = Int32.Parse(choice.Split(" ")[^1]);
             this.orderData.UpdateTaskStatus(id, index, "waiting for approval");
         }
-    }
-
-    public void ApproveTask(int id, int index) {
-        this.orderData.UpdateTaskStatus(id, index, "finished");
     }
 
     public List<string> ApproveOrderOptions(int id) {

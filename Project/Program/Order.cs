@@ -14,6 +14,7 @@ public class Order
     [JsonInclude] private string status;
     [JsonInclude] private DateTime date;
     [JsonInclude] private List<Task> tasks;
+    [JsonInclude] private string notes;
 
     public Order(int id, string type, string device, string name, string status) {
         this.id = id;
@@ -24,6 +25,7 @@ public class Order
         this.status = status;
         this.date = default;
         this.tasks = [];
+        this.notes = "";
     }
 
     // getters and setters
@@ -53,6 +55,9 @@ public class Order
     }
     public Task GetOneTask(int index) {
         return this.tasks.Find(x => x.GetIndex() == index);
+    }
+    public string GetNotes() {
+        return this.notes;
     }
 
     public void SetType(string type) {
@@ -93,6 +98,9 @@ public class Order
     }
     public void RemoveEmployeeFromTask(int index, Employee employee) {
         this.tasks.Find(x => x.GetIndex() == index).RemoveEmployee(employee);
+    }
+    public void SetNotes(string notes) {
+        this.notes = notes;
     }
 
 }

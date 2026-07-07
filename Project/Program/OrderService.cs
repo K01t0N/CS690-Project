@@ -121,8 +121,8 @@ public class OrderService
             this.AddStabilityTasks(id);
         } else if (type == "Screen") {
             this.AddScreenTasks(id);
-        } else if (type == "Hardware Other") {
-            this.AddHardwareTasks(id);
+        } else if (type == "Data Recovery") {
+            this.AddDataTasks(id);
         } else if (type == "Performance") {
             this.AddPerformanceTasks(id);
         }
@@ -130,33 +130,45 @@ public class OrderService
     }
 
     void AddPowerTasks(int id) {
-        this.orderData.AddTask(id, 1, "text");
-        this.orderData.AddTask(id, 2, "text");
-        this.orderData.AddTask(id, 3, "text");
+        this.orderData.AddTask(id, 1, "Check that the wall outlet is working correctly, and that the cord is not broken.");
+        this.orderData.AddTask(id, 2, "Make sure that the computer’s power supply switch is turned on.");
+        this.orderData.AddTask(id, 3, "Check the internal wiring of the system.");
+        this.orderData.AddTask(id, 4, "Check the POST code as indicated on the motherboard.");
+        this.orderData.AddTask(id, 5, "Check the individual hardware components.");
     }
 
     void AddStabilityTasks(int id) {
-        this.orderData.AddTask(id, 1, "text");
-        this.orderData.AddTask(id, 2, "text");
-        this.orderData.AddTask(id, 3, "text");
+        this.orderData.AddTask(id, 1, "Check for overheating, especially in the CPU and GPU.");
+        this.orderData.AddTask(id, 2, "Run diagnostics on the RAM to make sure it is not faulty or corrupt.");
+        this.orderData.AddTask(id, 3, "Check the drivers.");
+        this.orderData.AddTask(id, 4, "Check the system for malware and viruses.");
+        this.orderData.AddTask(id, 5, "Check that the applications do not conflict with each other.");
+        this.orderData.AddTask(id, 6, "Check that the hard drive is working correctly.");
     }
 
     void AddScreenTasks(int id) {
-        this.orderData.AddTask(id, 1, "text");
-        this.orderData.AddTask(id, 2, "text");
-        this.orderData.AddTask(id, 3, "text");
+        this.orderData.AddTask(id, 1, "Examine the damage and identify the model.");
+        this.orderData.AddTask(id, 2, "Get a replacement screen that fits the model.");
+        this.orderData.AddTask(id, 3, "Get a screwdriver set, plastic dry tool, Ant-Static Wrist Strap, Screw Container, and Cloth.");
+        this.orderData.AddTask(id, 4, "Prepare laptop for screen replacement.");
+        this.orderData.AddTask(id, 5, "Remove the damaged screen and install a new screen.");
+        this.orderData.AddTask(id, 6, "Test the new screen and reassemble the laptop.");
     }
 
-    void AddHardwareTasks(int id) {
-        this.orderData.AddTask(id, 1, "text");
-        this.orderData.AddTask(id, 2, "text");
-        this.orderData.AddTask(id, 3, "text");
+    void AddDataTasks(int id) {
+        this.orderData.AddTask(id, 1, "Get a universal transfer cable that is compatible with the hard drive.");
+        this.orderData.AddTask(id, 2, "Remove the hard drive from the computer.");
+        this.orderData.AddTask(id, 3, "Connect the power cable of the hard drive to a power source, then connect the hard drive to a working computer with the UTC.");
+        this.orderData.AddTask(id, 4, "Find the hard drive on the working computer and transfer the data.");
+        this.orderData.SetNotes(id, "This order involves the handling of sensitive data. Keep the hard drive stored in a safe place, and use extra caution when working on devices related to the order.");
     }
 
     void AddPerformanceTasks(int id) {
-        this.orderData.AddTask(id, 1, "text");
-        this.orderData.AddTask(id, 2, "text");
-        this.orderData.AddTask(id, 3, "text");
+        this.orderData.AddTask(id, 1, "Restart the computer.");
+        this.orderData.AddTask(id, 2, "Open Task Manager to view the computer’s performance.");
+        this.orderData.AddTask(id, 3, "Disable startup programs if they are slowing down the computer.");
+        this.orderData.AddTask(id, 4, "Free up disk space on the hard drive.");
+        this.orderData.AddTask(id, 5, "Check the system for viruses and malware.");
     }
 
     public void FinishTaskManager(int id, int index) {

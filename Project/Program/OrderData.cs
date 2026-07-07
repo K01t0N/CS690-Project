@@ -54,6 +54,11 @@ public class OrderData
         Task task = new Task(index, text);
         this.orders.Find(x => x.GetID() == id).AddTask(task);
         this.SaveOrderData();
+    }
+
+    public void SetNotes(int id, string notes) {
+        this.orders.Find(x => x.GetID() == id).SetNotes(notes);
+        this.SaveOrderData();
     } 
 
     public void AddEmployee(int id, Employee employee) {

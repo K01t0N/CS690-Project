@@ -32,13 +32,12 @@ class UI
         string type = this.SelectArr("Select your Repair Type.",
         new string[] {
             "Won't Turn On", "Frequent Crashes", "Broken Screen",
-            "Other Damage", "Lost Data", "Slower than Usual"
+            "Lost Data", "Slower than Usual"
             });
 
         type = type.Replace("Won't Turn On", "Power")
             .Replace("Frequent Crashes", "Stability")
             .Replace("Broken Screen", "Screen")
-            .Replace("Other Damage", "Hardware Other")
             .Replace("Lost Data", "Data Recovery")
             .Replace("Slower than Usual", "Performance");
         string device = AnsiConsole.Ask<string>("Enter your Device.");
@@ -51,10 +50,7 @@ class UI
         string orderNumber = AnsiConsole.Ask<string>("Enter your Order Number.");
         try {
             Order order = os.GetOneOrder(Int32.Parse(orderNumber));
-        } catch (System.FormatException) {
-            Console.WriteLine("The order number could not be read. Please make sure the input is a number only.")
-        }
-        if (order == null) {
+            if (order == null) {
             Console.WriteLine("No order matches this number." + 
             "Either the number is incorrect, the order was rejected, or it was already picked up.");
         } else {
@@ -70,6 +66,10 @@ class UI
                 Console.WriteLine("Your order is ready to be picked up.");
             }
         }
+        } catch (System.FormatException) {
+            Console.WriteLine("The order number could not be read. Please make sure the input is a number only.");
+        }
+        
     }
 
     void SelectEmployee() {
@@ -98,7 +98,7 @@ class UI
             orders = this.os.GetOrders(sortBy);
 
             Table table = new Table();
-            List<string> columns = ["id", "type", "device", "name", "date", "status"]; // employees
+            List<string> columns = ["id", "type", "device", "name", "date", "status", "notes"];
             for (int i=0; i<columns.Count; i++) {
                 table.AddColumn(columns[i]);
             }
@@ -108,7 +108,11 @@ class UI
                 Order order = orders[i];
                 string id = order.GetID().ToString();
                 string date = order.GetDate().ToString("d");
-                table.AddRow(id, order.GetTypeString(), order.GetDevice(), order.GetName(), date, order.GetStatus());
+                string notes = "";
+                if (order.GetNotes() != "") {
+                    notes = "true";
+                }
+                table.AddRow(id, order.GetTypeString(), order.GetDevice(), order.GetName(), date, order.GetStatus(), notes);
                 string info = order.GetID().ToString() + ", " + order.GetTypeString() + ", " + order.GetDevice() + 
                 ", " + order.GetName() + ", " + date + ", " + order.GetStatus();
                 options.Add(info);
@@ -129,7 +133,7 @@ class UI
                 AnsiConsole.Clear();
             } else {
                 while (true) {
-                    int id = Int32.Parse(option);
+                    int id = Int32.Parse(option.Split(",")[0]);
                     Order order = this.os.GetOneOrder(id);
                     this.DisplayOrder(order);
                     List<string> taskOptions = this.os.GetTaskOptions(id, this.employee);
@@ -154,12 +158,12 @@ class UI
         string prompt = "What would you like to do?";
         string[] choices = {"manage requests", "manage orders", "manage employees"};
         string choice = SelectArr(prompt, choices);
-        if      (choice == "manage requests")   {this.ManageRequestsNew();}
+        if      (choice == "manage requests")   {this.ManageRequests();}
         else if (choice == "manage orders")     {this.ManageOrders();}
         else if (choice == "manage employees")  {this.ManageEmployees();}
     }
 
-    void ManageRequestsNew() {
+    void ManageRequests() {
 
         List<Order> orders;
 
@@ -193,7 +197,7 @@ class UI
                 break;
             } else {
                 while (true) {
-                    int id = Int32.Parse(option);
+                    int id = Int32.Parse(option.Split(",")[0]);
                     Order order = this.os.GetOneOrder(id);
                     this.DisplayOrder(order);
                     string input = SelectArr("Select an option.", new string[] {"approve", "reject", "back"});
@@ -250,7 +254,7 @@ class UI
             orders = this.os.GetOrders(sortBy);
 
             Table table = new Table();
-            List<string> columns = ["id", "type", "device", "name", "date", "status"];
+            List<string> columns = ["id", "type", "device", "name", "date", "status", "notes"];
             for (int i=0; i<columns.Count; i++) {
                 table.AddColumn(columns[i]);
             }
@@ -260,7 +264,11 @@ class UI
                 Order order = orders[i];
                 string id = order.GetID().ToString();
                 string date = order.GetDate().ToString("d");
-                table.AddRow(id, order.GetTypeString(), order.GetDevice(), order.GetName(), date, order.GetStatus());
+                string notes = "";
+                if (order.GetNotes() != "") {
+                    notes = "true";
+                }
+                table.AddRow(id, order.GetTypeString(), order.GetDevice(), order.GetName(), date, order.GetStatus(), notes);
                 string info = order.GetID().ToString() + ", " + order.GetTypeString() + ", " + order.GetDevice() + 
                 ", " + order.GetName() + ", " + date + ", " + order.GetStatus();
                 options.Add(info);
@@ -281,7 +289,7 @@ class UI
                 this.os.GetOrders(sortBy);
                 AnsiConsole.Clear();
             } else {
-                int id = Int32.Parse(option.Split("\t")[0]);
+                int id = Int32.Parse(option.Split(",")[0]);
                 Order order = this.os.GetOneOrder(id);
                 this.DisplayOrder(order);
 
@@ -378,11 +386,18 @@ class UI
             ", name: " + order.GetName() + ", status: " + order.GetStatus() + "\n\n");
 
         if (order.GetStatus() != "request") {
+
+            Table table = new Table();
+            List<string> columns = ["#", "Status", "Employees", "Task"];
+            for (int i=0; i<columns.Count; i++) {
+                table.AddColumn(columns[i]);
+            }
             for (int i=0; i<order.GetTasks().Count; i++) {
                 Task task = order.GetTasks()[i];
-                Console.WriteLine(task.GetIndex().ToString() + " - " + task.GetText() + ", Employees: " +
-                task.GetEmployeeNames() + ", Status: " + task.GetStatus());
+                table.AddRow(task.GetIndex().ToString(), task.GetStatus(), task.GetEmployeeNames(), task.GetText());
             }
+            AnsiConsole.Write(table);
+
             if (order.GetEmployees().Count == 0) {
                 Console.WriteLine("No one has started this order yet.");
             } else {
@@ -393,6 +408,13 @@ class UI
                 }
                 string employeeString = String.Join(", ", employeeNames);
                 Console.WriteLine("Employees: " + employeeString);
+            }
+            if (order.GetNotes() != "") {
+                Console.WriteLine("--------------------------------");
+                Console.WriteLine("ADDITIONAL INSTRUCTIONS");
+                Console.WriteLine("");
+                Console.WriteLine(order.GetNotes());
+                Console.WriteLine("--------------------------------");
             }
         }
     }

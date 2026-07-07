@@ -97,8 +97,6 @@ public class OrderService
     }
 
     int NewId() {
-        // generates a random id that is unique from other ids in the orders list
-        // https://learn.microsoft.com/en-us/dotnet/api/system.randomview=net-10.0
         int number = new int();
         bool match = true;
         while(match == true) {

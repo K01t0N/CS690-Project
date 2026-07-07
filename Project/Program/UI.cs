@@ -133,6 +133,7 @@ class UI
                 AnsiConsole.Clear();
             } else {
                 while (true) {
+                    AnsiConsole.Clear();
                     int id = Int32.Parse(option.Split(",")[0]);
                     Order order = this.os.GetOneOrder(id);
                     this.DisplayOrder(order);
@@ -172,7 +173,7 @@ class UI
             orders = this.os.GetRequests();
 
             Table table = new Table();
-            List<string> columns = ["id", "type", "device", "name", "status"];
+            List<string> columns = ["id", "type", "device", "name"];
             for (int i=0; i<columns.Count; i++) {
                 table.AddColumn(columns[i]);
             }
@@ -182,9 +183,9 @@ class UI
                 Order order = orders[i];
                 string id = order.GetID().ToString();
                 string date = order.GetDate().ToString("d");
-                table.AddRow(id, order.GetTypeString(), order.GetDevice(), order.GetName(), order.GetStatus());
+                table.AddRow(id, order.GetTypeString(), order.GetDevice(), order.GetName());
                 string info = order.GetID().ToString() + ", " + order.GetTypeString() + ", " + order.GetDevice() + 
-                ", " + order.GetName() + ", " + date + ", " + order.GetStatus();
+                ", " + order.GetName();
                 options.Add(info);
             }
 
@@ -197,11 +198,13 @@ class UI
                 break;
             } else {
                 while (true) {
+                    AnsiConsole.Clear();
                     int id = Int32.Parse(option.Split(",")[0]);
                     Order order = this.os.GetOneOrder(id);
                     this.DisplayOrder(order);
                     string input = SelectArr("Select an option.", new string[] {"approve", "reject", "back"});
-                    if (input == "Back") {
+                    if (input == "back") {
+                        AnsiConsole.Clear();
                         break;
                     } else {
                         string confirm = SelectArr("Are you sure?", new string[] {"Yes", "No"});
@@ -289,6 +292,7 @@ class UI
                 this.os.GetOrders(sortBy);
                 AnsiConsole.Clear();
             } else {
+                AnsiConsole.Clear();
                 int id = Int32.Parse(option.Split(",")[0]);
                 Order order = this.os.GetOneOrder(id);
                 this.DisplayOrder(order);
